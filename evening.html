@@ -228,11 +228,70 @@
     }
 
     // ============================
+    // 天気を取得する関数
+    // ============================
+
+    function getLocation() {
+      return new Promise(function(resolve, reject) {
+        if (!navigator.geolocation) {
+          reject('位置情報非対応');
+          return;
+        }
+        navigator.geolocation.getCurrentPosition(
+          function(position) {
+            resolve({
+              lat: position.coords.latitude,
+              lon: position.coords.longitude
+            });
+          },
+          function(error) {
+            reject('位置情報取得失敗');
+          }
+        );
+      });
+    }
+
+    function getWeather(lat, lon) {
+      var url = 'https://api.open-meteo.com/v1/forecast'
+        + '?latitude=' + lat
+        + '&longitude=' + lon
+        + '&current=temperature_2m,weathercode'
+        + '&timezone=Asia%2FTokyo';
+
+      return fetch(url)
+        .then(function(response) {
+          return response.json();
+        })
+        .then(function(data) {
+          return {
+            temperature: data.current.temperature_2m,
+            weatherCode: data.current.weathercode
+          };
+        });
+    }
+
+    function weatherCodeToText(code) {
+      if (code === 0)                return '快晴';
+      if (code >= 1 && code <= 3)    return '晴れ';
+      if (code >= 45 && code <= 48)  return '霧';
+      if (code >= 51 && code <= 57)  return '霧雨';
+      if (code >= 61 && code <= 67)  return '雨';
+      if (code >= 71 && code <= 77)  return '雪';
+      if (code >= 80 && code <= 82)  return 'にわか雨';
+      if (code >= 85 && code <= 86)  return 'にわか雪';
+      if (code >= 95 && code <= 99)  return '雷雨';
+      return '不明';
+    }
+
+    // ============================
     // 保存ボタンの処理
     // ============================
     document.getElementById('save-btn').addEventListener('click', function() {
 
-      // 1. フォームの値を集める
+      var btn = document.getElementById('save-btn');
+      btn.disabled = true;
+      btn.textContent = '取得中...';
+
       var record = {
         date: new Date().toLocaleDateString('ja-JP'),
         time: new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }),
@@ -245,25 +304,38 @@
         socializing: getRadioValue('socializing'),
         done: getCheckedValues('done[]'),
         hard: getCheckedValues('hard[]'),
-        memo: document.getElementById('memo').value
+        memo: document.getElementById('memo').value,
+        weather: null,
+        temperature: null
       };
 
-      // 2. localStorageに保存
-      saveRecord(record);
+      getLocation()
+        .then(function(location) {
+          return getWeather(location.lat, location.lon);
+        })
+        .then(function(weather) {
+          record.weather = weatherCodeToText(weather.weatherCode);
+          record.temperature = weather.temperature;
+        })
+        .catch(function(error) {
+          console.log('天気取得スキップ:', error);
+        })
+        .finally(function() {
+          saveRecord(record);
 
-      // 3. コンソールに出力（デバッグ用）
-      console.log('保存しました:', record);
-      console.log('全データ:', loadRecords());
+          console.log('保存しました:', record);
 
-      // 4. 成功メッセージを表示
-      var messageDiv = document.getElementById('save-message');
-      messageDiv.innerHTML = '<div class="alert alert-success">記録しました！（' + record.date + ' ' + record.time + '）</div>';
-      messageDiv.style.display = 'block';
+          var messageDiv = document.getElementById('save-message');
+          messageDiv.innerHTML = '<div class="alert alert-success">記録しました！（' + record.date + ' ' + record.time + '）</div>';
+          messageDiv.style.display = 'block';
 
-      // 5. 3秒後にメッセージを消す
-      setTimeout(function() {
-        messageDiv.style.display = 'none';
-      }, 3000);
+          btn.disabled = false;
+          btn.textContent = '夜の記録を保存する';
+
+          setTimeout(function() {
+            messageDiv.style.display = 'none';
+          }, 3000);
+        });
     });
   </script>
 
