@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>記録一覧 - Self Insight</title>
+
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+
+  <div class="container py-4" style="max-width: 600px;">
+
+    <!-- タイトル -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h1 class="fs-4 fw-bold mb-1">Self Insight</h1>
+        <p class="text-muted mb-0">記録一覧</p>
+      </div>
+      <div class="d-flex gap-2">
+        <a href="analysis.html" class="btn btn-outline-secondary btn-sm">分析</a>
+        <a href="index.html" class="btn btn-outline-primary btn-sm">＋ 記録する</a>
+      </div>
+    </div>
+
+    <!-- 記録一覧 -->
+    <div id="records-container">
+      <!-- JavaScriptで記録を挿入する -->
+    </div>
+
+    <!-- 記録がない場合のメッセージ -->
+    <div id="empty-message" style="display: none;">
+      <div class="text-center text-muted py-5">
+        <p>まだ記録がありません</p>
+        <a href="index.html" class="btn btn-primary">最初の記録をする</a>
+      </div>
+    </div>
+
+  </div><!-- /container -->
+
+  <!-- Bootstrap 5 JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    // ============================
+    // localStorageからデータを読む
+    // ============================
+
+    var STORAGE_KEY = 'selfInsightRecords';
+
+    function loadRecords() {
+      var data = localStorage.getItem(STORAGE_KEY);
+      if (data === null) {
+        return [];
+      }
+      return JSON.parse(data);
+    }
+
+    // ============================
+    // 配列を見やすい文字列に変換する
+    // ============================
+
+    function arrayToText(arr) {
+      if (!arr || arr.length === 0) {
+        return '<span class="text-muted">なし</span>';
+      }
+      return arr.map(function(item) {
+        return '<span class="badge bg-light text-dark border me-1">' + item + '</span>';
+      }).join('');
+    }
+
+    function valueToText(value) {
+      if (!value || value === '') {
+        return '<span class="text-muted">未記入</span>';
+      }
+      return value;
+    }
+
+    // ============================
+    // 記録カードを1件分作る
+    // ============================
+
+    function createRecordCard(record, index) {
+
+      // 朝の記録カード
+      if (record.type === 'morning') {
+        return `
+          <div class="card mb-3">
+            <div class="card-body">
+
+              <!-- 日時・種別 -->
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                  <span class="fw-bold">${record.date}</span>
+                  <span class="text-muted ms-2">${record.time}</span>
+                </div>
+                <span class="badge bg-warning text-dark">朝</span>
+              </div>
+
+              <!-- 体調サイン -->
+              <div class="mb-2">
+                <div class="text-muted small mb-1">体調サイン</div>
+                <div>${arrayToText(record.body)}</div>
+              </div>
+
+              <!-- メンタルサイン -->
+              <div class="mb-2">
+                <div class="text-muted small mb-1">メンタルサイン</div>
+                <div>${arrayToText(record.mental)}</div>
+              </div>
+
+              <!-- 活力サイン -->
+              <div class="mb-2">
+                <div class="text-muted small mb-1">活力サイン</div>
+                <div>${valueToText(record.vitality)}</div>
+              </div>
+
+              <!-- 睡眠 -->
+              <div>
+                <div class="text-muted small mb-1">睡眠</div>
+                <div>
+                  ${valueToText(record.sleepHours)} 時間 ／
+                  満足度 ${valueToText(record.sleepQuality)}
+                </div>
+              </div>
+
+            </div>
+          </div>
+        `;
+      }
+
+      // 夜の記録カード
+      if (record.type === 'evening') {
+        return `
+          <div class="card mb-3">
+            <div class="card-body">
+
+              <!-- 日時・種別 -->
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                  <span class="fw-bold">${record.date}</span>
+                  <span class="text-muted ms-2">${record.time}</span>
+                </div>
+                <span class="badge bg-primary">夜</span>
+              </div>
+
+              <!-- 体調サイン -->
+              <div class="mb-2">
+                <div class="text-muted small mb-1">体調サイン</div>
+                <div>${arrayToText(record.body)}</div>
+              </div>
+
+              <!-- メンタルサイン -->
+              <div class="mb-2">
+                <div class="text-muted small mb-1">メンタルサイン</div>
+                <div>${arrayToText(record.mental)}</div>
+              </div>
+
+              <!-- 活力サイン -->
+              <div class="mb-2">
+                <div class="text-muted small mb-1">活力サイン</div>
+                <div>${valueToText(record.vitality)}</div>
+              </div>
+
+              <!-- 行動 -->
+              <div class="mb-2">
+                <div class="text-muted small mb-1">行動</div>
+                <div>
+                  作業 ${valueToText(record.workHours)} 時間 ／
+                  外出 ${valueToText(record.outing)} ／
+                  交流 ${valueToText(record.socializing)}
+                </div>
+              </div>
+
+              <!-- できたこと -->
+              <div class="mb-2">
+                <div class="text-muted small mb-1">今日できたこと</div>
+                <div>${arrayToText(record.done)}</div>
+              </div>
+
+              <!-- 大変だったこと -->
+              <div class="mb-2">
+                <div class="text-muted small mb-1">今日大変だったこと</div>
+                <div>${arrayToText(record.hard)}</div>
+              </div>
+
+              <!-- 補足メモ -->
+              ${record.memo ? `
+              <div>
+                <div class="text-muted small mb-1">補足メモ</div>
+                <div class="text-break">${record.memo}</div>
+              </div>` : ''}
+
+            </div>
+          </div>
+        `;
+      }
+
+      // 想定外のtypeが来た場合（将来の保険）
+      return '';
+    }
+
+    // ============================
+    // ページ読み込み時に記録を表示する
+    // ============================
+
+    var records = loadRecords();
+
+    if (records.length === 0) {
+
+      // 記録がない場合
+      document.getElementById('empty-message').style.display = 'block';
+
+    } else {
+
+      // 新しい順（末尾から）に表示する
+      var container = document.getElementById('records-container');
+      for (var i = records.length - 1; i >= 0; i--) {
+        container.innerHTML += createRecordCard(records[i], i);
+      }
+
+    }
+  </script>
+
+</body>
+</html>

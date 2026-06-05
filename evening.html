@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>夜の記録 - Self Insight</title>
+
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    body {
+      background-color: #f8f9fa;
+    }
+
+    /* チェックボックス・ラジオボタンをボタン風にする */
+    .sign-btn input[type="checkbox"],
+    .sign-btn input[type="radio"] {
+      display: none;
+    }
+
+    .sign-btn label {
+      display: inline-block;
+      padding: 6px 14px;
+      margin: 4px;
+      border: 1px solid #dee2e6;
+      border-radius: 20px;
+      background-color: #ffffff;
+      cursor: pointer;
+      font-size: 0.9rem;
+      user-select: none;
+    }
+
+    .sign-btn input[type="checkbox"]:checked + label,
+    .sign-btn input[type="radio"]:checked + label {
+      background-color: #0d6efd;
+      color: #ffffff;
+      border-color: #0d6efd;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container py-4" style="max-width: 600px;">
+
+    <!-- タイトル -->
+    <h1 class="fs-4 fw-bold mb-1">Self Insight</h1>
+    <p class="text-muted mb-4">夜の記録</p>
+
+    <!-- 体調サイン -->
+    <div class="card mb-3">
+      <div class="card-body">
+        <h2 class="fs-6 fw-bold mb-3">体調サイン <span class="text-muted fw-normal">（複数選択）</span></h2>
+        <div class="sign-btn">
+          <span><input type="checkbox" id="b1" name="body[]" value="元気"><label for="b1">元気</label></span>
+          <span><input type="checkbox" id="b2" name="body[]" value="少しだるい"><label for="b2">少しだるい</label></span>
+          <span><input type="checkbox" id="b3" name="body[]" value="強くだるい"><label for="b3">強くだるい</label></span>
+          <span><input type="checkbox" id="b4" name="body[]" value="眠い"><label for="b4">眠い</label></span>
+          <span><input type="checkbox" id="b5" name="body[]" value="頭痛"><label for="b5">頭痛</label></span>
+          <span><input type="checkbox" id="b6" name="body[]" value="胃腸不調"><label for="b6">胃腸不調</label></span>
+          <span><input type="checkbox" id="b7" name="body[]" value="肩こり"><label for="b7">肩こり</label></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- メンタルサイン -->
+    <div class="card mb-3">
+      <div class="card-body">
+        <h2 class="fs-6 fw-bold mb-3">メンタルサイン <span class="text-muted fw-normal">（複数選択）</span></h2>
+        <div class="sign-btn">
+          <span><input type="checkbox" id="m1" name="mental[]" value="穏やか"><label for="m1">穏やか</label></span>
+          <span><input type="checkbox" id="m2" name="mental[]" value="前向き"><label for="m2">前向き</label></span>
+          <span><input type="checkbox" id="m3" name="mental[]" value="不安"><label for="m3">不安</label></span>
+          <span><input type="checkbox" id="m4" name="mental[]" value="落ち込み"><label for="m4">落ち込み</label></span>
+          <span><input type="checkbox" id="m5" name="mental[]" value="イライラ"><label for="m5">イライラ</label></span>
+          <span><input type="checkbox" id="m6" name="mental[]" value="焦り"><label for="m6">焦り</label></span>
+          <span><input type="checkbox" id="m7" name="mental[]" value="無気力"><label for="m7">無気力</label></span>
+          <span><input type="checkbox" id="m8" name="mental[]" value="緊張"><label for="m8">緊張</label></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 活力サイン -->
+    <div class="card mb-3">
+      <div class="card-body">
+        <h2 class="fs-6 fw-bold mb-3">活力サイン <span class="text-muted fw-normal">（1つ選択）</span></h2>
+        <div class="sign-btn">
+          <span><input type="radio" id="v1" name="vitality" value="やる気十分"><label for="v1">やる気十分</label></span>
+          <span><input type="radio" id="v2" name="vitality" value="普通"><label for="v2">普通</label></span>
+          <span><input type="radio" id="v3" name="vitality" value="取りかかりが重い"><label for="v3">取りかかりが重い</label></span>
+          <span><input type="radio" id="v4" name="vitality" value="何もしたくない"><label for="v4">何もしたくない</label></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 行動 -->
+    <div class="card mb-3">
+      <div class="card-body">
+        <h2 class="fs-6 fw-bold mb-3">行動</h2>
+
+        <!-- 作業時間 -->
+        <div class="mb-3">
+          <label for="work-hours" class="form-label">作業時間</label>
+          <div class="d-flex align-items-center gap-2">
+            <input type="number" id="work-hours" class="form-control" style="width: 80px;"
+              min="0" max="24" step="0.5" placeholder="0">
+            <span class="text-muted">時間</span>
+          </div>
+        </div>
+
+        <!-- 外出 -->
+        <div class="mb-3">
+          <label class="form-label">外出</label>
+          <div class="sign-btn">
+            <span><input type="radio" id="go1" name="outing" value="した"><label for="go1">した</label></span>
+            <span><input type="radio" id="go2" name="outing" value="しなかった"><label for="go2">しなかった</label></span>
+          </div>
+        </div>
+
+        <!-- 人との交流 -->
+        <div>
+          <label class="form-label">人との交流</label>
+          <div class="sign-btn">
+            <span><input type="radio" id="s1" name="socializing" value="あった"><label for="s1">あった</label></span>
+            <span><input type="radio" id="s2" name="socializing" value="なかった"><label for="s2">なかった</label></span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 今日できたこと -->
+    <div class="card mb-3">
+      <div class="card-body">
+        <h2 class="fs-6 fw-bold mb-3">今日できたこと <span class="text-muted fw-normal">（複数選択）</span></h2>
+        <div class="sign-btn">
+          <span><input type="checkbox" id="d1" name="done[]" value="作業できた"><label for="d1">作業できた</label></span>
+          <span><input type="checkbox" id="d2" name="done[]" value="外出できた"><label for="d2">外出できた</label></span>
+          <span><input type="checkbox" id="d3" name="done[]" value="人と話せた"><label for="d3">人と話せた</label></span>
+          <span><input type="checkbox" id="d4" name="done[]" value="家事できた"><label for="d4">家事できた</label></span>
+          <span><input type="checkbox" id="d5" name="done[]" value="趣味ができた"><label for="d5">趣味ができた</label></span>
+          <span><input type="checkbox" id="d6" name="done[]" value="ゆっくり休めた"><label for="d6">ゆっくり休めた</label></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 今日大変だったこと -->
+    <div class="card mb-3">
+      <div class="card-body">
+        <h2 class="fs-6 fw-bold mb-3">今日大変だったこと <span class="text-muted fw-normal">（複数選択）</span></h2>
+        <div class="sign-btn">
+          <span><input type="checkbox" id="h1" name="hard[]" value="疲れた"><label for="h1">疲れた</label></span>
+          <span><input type="checkbox" id="h2" name="hard[]" value="不安が強い"><label for="h2">不安が強い</label></span>
+          <span><input type="checkbox" id="h3" name="hard[]" value="落ち込み"><label for="h3">落ち込み</label></span>
+          <span><input type="checkbox" id="h4" name="hard[]" value="人間関係"><label for="h4">人間関係</label></span>
+          <span><input type="checkbox" id="h5" name="hard[]" value="睡眠不足"><label for="h5">睡眠不足</label></span>
+          <span><input type="checkbox" id="h6" name="hard[]" value="体調不良"><label for="h6">体調不良</label></span>
+          <span><input type="checkbox" id="h7" name="hard[]" value="仕事のストレス"><label for="h7">仕事のストレス</label></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 補足メモ -->
+    <div class="card mb-4">
+      <div class="card-body">
+        <h2 class="fs-6 fw-bold mb-3">補足メモ <span class="text-muted fw-normal">（自由記述）</span></h2>
+        <textarea id="memo" class="form-control" rows="4" placeholder="今日のことを自由に書いてください"></textarea>
+      </div>
+    </div>
+
+    <!-- 保存ボタン -->
+    <button type="button" class="btn btn-primary w-100" id="save-btn">
+      夜の記録を保存する
+    </button>
+
+    <!-- 記録一覧へのリンク -->
+    <div class="d-flex justify-content-between mt-3">
+        <a href="index.html" class="text-muted small">← 朝の記録へ</a>
+        <a href="analysis.html" class="text-muted small">分析を見る →</a>
+        <a href="records.html" class="text-muted small">記録一覧を見る →</a>
+    </div>
+
+    <!-- 保存結果メッセージ -->
+    <div id="save-message" class="mt-3" style="display: none;"></div>
+
+  </div><!-- /container -->
+
+  <!-- Bootstrap 5 JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    // ============================
+    // フォームの値を取得する関数
+    // ============================
+
+    function getCheckedValues(name) {
+      var checkboxes = document.querySelectorAll('input[name="' + name + '"]:checked');
+      var values = [];
+      checkboxes.forEach(function(cb) {
+        values.push(cb.value);
+      });
+      return values;
+    }
+
+    function getRadioValue(name) {
+      var radio = document.querySelector('input[name="' + name + '"]:checked');
+      return radio ? radio.value : null;
+    }
+
+    // ============================
+    // localStorage への保存・読み込み
+    // ============================
+
+    var STORAGE_KEY = 'selfInsightRecords';
+
+    function loadRecords() {
+      var data = localStorage.getItem(STORAGE_KEY);
+      if (data === null) {
+        return [];
+      }
+      return JSON.parse(data);
+    }
+
+    function saveRecord(newRecord) {
+      var records = loadRecords();
+      records.push(newRecord);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+    }
+
+    // ============================
+    // 保存ボタンの処理
+    // ============================
+    document.getElementById('save-btn').addEventListener('click', function() {
+
+      // 1. フォームの値を集める
+      var record = {
+        date: new Date().toLocaleDateString('ja-JP'),
+        time: new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }),
+        type: 'evening',
+        body: getCheckedValues('body[]'),
+        mental: getCheckedValues('mental[]'),
+        vitality: getRadioValue('vitality'),
+        workHours: document.getElementById('work-hours').value,
+        outing: getRadioValue('outing'),
+        socializing: getRadioValue('socializing'),
+        done: getCheckedValues('done[]'),
+        hard: getCheckedValues('hard[]'),
+        memo: document.getElementById('memo').value
+      };
+
+      // 2. localStorageに保存
+      saveRecord(record);
+
+      // 3. コンソールに出力（デバッグ用）
+      console.log('保存しました:', record);
+      console.log('全データ:', loadRecords());
+
+      // 4. 成功メッセージを表示
+      var messageDiv = document.getElementById('save-message');
+      messageDiv.innerHTML = '<div class="alert alert-success">記録しました！（' + record.date + ' ' + record.time + '）</div>';
+      messageDiv.style.display = 'block';
+
+      // 5. 3秒後にメッセージを消す
+      setTimeout(function() {
+        messageDiv.style.display = 'none';
+      }, 3000);
+    });
+  </script>
+
+</body>
+</html>

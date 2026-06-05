@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>分析 - Self Insight</title>
+
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+
+  <div class="container py-4" style="max-width: 600px;">
+
+    <!-- タイトル -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h1 class="fs-4 fw-bold mb-1">Self Insight</h1>
+        <p class="text-muted mb-0">基本分析</p>
+      </div>
+      <a href="records.html" class="btn btn-outline-secondary btn-sm">記録一覧</a>
+    </div>
+
+    <!-- 今日のまとめ -->
+    <div class="card mb-3">
+      <div class="card-body">
+        <h2 class="fs-6 fw-bold mb-3">今日のまとめ</h2>
+        <div id="today-summary">
+          <p class="text-muted">読み込み中...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 朝→夜の変化 -->
+    <div class="card mb-3">
+      <div class="card-body">
+        <h2 class="fs-6 fw-bold mb-3">朝 → 夜の変化</h2>
+        <div id="morning-evening-change">
+          <p class="text-muted">読み込み中...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 7日間の傾向 -->
+    <div class="card mb-3">
+      <div class="card-body">
+        <h2 class="fs-6 fw-bold mb-3">7日間の傾向</h2>
+        <div id="weekly-trend">
+          <p class="text-muted">読み込み中...</p>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /container -->
+
+  <!-- Bootstrap 5 JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    // ============================
+    // localStorageからデータを読む
+    // ============================
+
+    var STORAGE_KEY = 'selfInsightRecords';
+
+    function loadRecords() {
+      var data = localStorage.getItem(STORAGE_KEY);
+      if (data === null) {
+        return [];
+      }
+      return JSON.parse(data);
+    }
+
+    // ============================
+    // ヘルパー関数
+    // ============================
+
+    // 配列をテキスト表示する（なしの場合は「なし」）
+    function arrayToText(arr) {
+      if (!arr || arr.length === 0) {
+        return '<span class="text-muted">なし</span>';
+      }
+      return arr.map(function(item) {
+        return '<span class="badge bg-light text-dark border me-1">' + item + '</span>';
+      }).join('');
+    }
+
+    // 値をテキスト表示する（空の場合は「未記入」）
+    function valueToText(value) {
+      if (!value || value === '') {
+        return '<span class="text-muted">未記入</span>';
+      }
+      return value;
+    }
+
+    // 今日の日付文字列を返す（記録の date と同じ形式）
+    function getTodayString() {
+      return new Date().toLocaleDateString('ja-JP');
+    }
+
+    // 過去N日分の日付文字列の配列を返す（今日を含む）
+    function getLastNDays(n) {
+      var days = [];
+      for (var i = 0; i < n; i++) {
+        var d = new Date();
+        d.setDate(d.getDate() - i);
+        days.push(d.toLocaleDateString('ja-JP'));
+      }
+      return days;
+    }
+
+    // ============================
+    // 今日のまとめを表示する
+    // ============================
+
+    function showTodaySummary(records) {
+      var today = getTodayString();
+      var container = document.getElementById('today-summary');
+
+      // 今日の朝・夜の記録を探す
+      var morningRecord = null;
+      var eveningRecord = null;
+
+      records.forEach(function(r) {
+        if (r.date === today && r.type === 'morning') {
+          morningRecord = r;
+        }
+        if (r.date === today && r.type === 'evening') {
+          eveningRecord = r;
+        }
+      });
+
+      // どちらもない場合
+      if (!morningRecord && !eveningRecord) {
+        container.innerHTML = '<p class="text-muted">今日の記録がありません</p>';
+        return;
+      }
+
+      var html = '';
+
+      // 朝の記録があれば表示
+      if (morningRecord) {
+        html += `
+          <div class="mb-3">
+            <div class="d-flex align-items-center mb-2">
+              <span class="badge bg-warning text-dark me-2">朝</span>
+              <span class="text-muted small">${morningRecord.time}</span>
+            </div>
+            <div class="mb-1">
+              <span class="text-muted small">体調：</span>${arrayToText(morningRecord.body)}
+            </div>
+            <div class="mb-1">
+              <span class="text-muted small">メンタル：</span>${arrayToText(morningRecord.mental)}
+            </div>
+            <div class="mb-1">
+              <span class="text-muted small">活力：</span>${valueToText(morningRecord.vitality)}
+            </div>
+            <div>
+              <span class="text-muted small">睡眠：</span>${valueToText(morningRecord.sleepHours)}時間 ／ 満足度 ${valueToText(morningRecord.sleepQuality)}
+            </div>
+          </div>
+        `;
+      } else {
+        html += '<p class="text-muted small">朝の記録なし</p>';
+      }
+
+      // 夜の記録があれば表示
+      if (eveningRecord) {
+        html += `
+          <hr>
+          <div class="mb-3">
+            <div class="d-flex align-items-center mb-2">
+              <span class="badge bg-primary me-2">夜</span>
+              <span class="text-muted small">${eveningRecord.time}</span>
+            </div>
+            <div class="mb-1">
+              <span class="text-muted small">体調：</span>${arrayToText(eveningRecord.body)}
+            </div>
+            <div class="mb-1">
+              <span class="text-muted small">メンタル：</span>${arrayToText(eveningRecord.mental)}
+            </div>
+            <div class="mb-1">
+              <span class="text-muted small">活力：</span>${valueToText(eveningRecord.vitality)}
+            </div>
+            <div class="mb-1">
+              <span class="text-muted small">作業：</span>${valueToText(eveningRecord.workHours)}時間 ／ 外出：${valueToText(eveningRecord.outing)} ／ 交流：${valueToText(eveningRecord.socializing)}
+            </div>
+            <div class="mb-1">
+              <span class="text-muted small">できたこと：</span>${arrayToText(eveningRecord.done)}
+            </div>
+            <div class="mb-1">
+              <span class="text-muted small">大変だったこと：</span>${arrayToText(eveningRecord.hard)}
+            </div>
+            ${eveningRecord.memo ? `<div><span class="text-muted small">メモ：</span>${eveningRecord.memo}</div>` : ''}
+          </div>
+        `;
+      } else {
+        html += '<p class="text-muted small mt-2">夜の記録なし</p>';
+      }
+
+      container.innerHTML = html;
+    }
+
+    // ============================
+    // 朝→夜の変化を表示する
+    // ============================
+
+    function showMorningEveningChange(records) {
+      var today = getTodayString();
+      var container = document.getElementById('morning-evening-change');
+
+      // 今日の朝・夜の記録を探す
+      var morningRecord = null;
+      var eveningRecord = null;
+
+      records.forEach(function(r) {
+        if (r.date === today && r.type === 'morning') {
+          morningRecord = r;
+        }
+        if (r.date === today && r.type === 'evening') {
+          eveningRecord = r;
+        }
+      });
+
+      // 両方ない場合
+      if (!morningRecord && !eveningRecord) {
+        container.innerHTML = '<p class="text-muted">今日の朝・夜の記録が揃うと変化を確認できます</p>';
+        return;
+      }
+
+      // どちらか一方しかない場合
+      if (!morningRecord || !eveningRecord) {
+        container.innerHTML = '<p class="text-muted">朝と夜の両方を記録すると変化を確認できます</p>';
+        return;
+      }
+
+      // 体調・メンタル・活力を朝→夜で並べて表示
+      var html = `
+        <table class="table table-sm">
+          <thead>
+            <tr>
+              <th class="text-muted fw-normal" style="width: 30%"></th>
+              <th><span class="badge bg-warning text-dark">朝</span></th>
+              <th><span class="badge bg-primary">夜</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="text-muted small">体調</td>
+              <td>${arrayToText(morningRecord.body)}</td>
+              <td>${arrayToText(eveningRecord.body)}</td>
+            </tr>
+            <tr>
+              <td class="text-muted small">メンタル</td>
+              <td>${arrayToText(morningRecord.mental)}</td>
+              <td>${arrayToText(eveningRecord.mental)}</td>
+            </tr>
+            <tr>
+              <td class="text-muted small">活力</td>
+              <td>${valueToText(morningRecord.vitality)}</td>
+              <td>${valueToText(eveningRecord.vitality)}</td>
+            </tr>
+          </tbody>
+        </table>
+      `;
+
+      container.innerHTML = html;
+    }
+
+    // ============================
+    // 7日間の傾向を表示する
+    // ============================
+
+    function showWeeklyTrend(records) {
+      var container = document.getElementById('weekly-trend');
+      var last7days = getLastNDays(7);
+
+      // 日付ごとに朝・夜の記録を整理する
+      var dayMap = {};
+      last7days.forEach(function(d) {
+        dayMap[d] = { morning: null, evening: null };
+      });
+
+      records.forEach(function(r) {
+        if (dayMap[r.date] !== undefined) {
+          if (r.type === 'morning') {
+            dayMap[r.date].morning = r;
+          }
+          if (r.type === 'evening') {
+            dayMap[r.date].evening = r;
+          }
+        }
+      });
+
+      // 7日分のどの日にも記録がない場合
+      var hasAnyRecord = last7days.some(function(d) {
+        return dayMap[d].morning !== null || dayMap[d].evening !== null;
+      });
+
+      if (!hasAnyRecord) {
+        container.innerHTML = '<p class="text-muted">7日分の記録が貯まると傾向を確認できます</p>';
+        return;
+      }
+
+      // 日付ごとに表示する（新しい順）
+      var html = '';
+      last7days.forEach(function(d) {
+        var morning = dayMap[d].morning;
+        var evening = dayMap[d].evening;
+
+        // 記録がない日はスキップ
+        if (!morning && !evening) {
+          return;
+        }
+
+        html += `
+          <div class="border-bottom pb-2 mb-2">
+            <div class="fw-bold small mb-1">${d}</div>
+            <div class="d-flex gap-3">
+        `;
+
+        // 朝の概要
+        if (morning) {
+          html += `
+            <div>
+              <span class="badge bg-warning text-dark me-1">朝</span>
+              <span class="small">${morning.vitality || '活力未記入'}</span>
+            </div>
+          `;
+        }
+
+        // 夜の概要
+        if (evening) {
+          html += `
+            <div>
+              <span class="badge bg-primary me-1">夜</span>
+              <span class="small">${evening.vitality || '活力未記入'}</span>
+            </div>
+          `;
+        }
+
+        html += `
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    // ============================
+    // ページ読み込み時に分析を実行する
+    // ============================
+
+    var records = loadRecords();
+
+    showTodaySummary(records);
+    showMorningEveningChange(records);
+    showWeeklyTrend(records);
+
+  </script>
+
+</body>
+</html>
