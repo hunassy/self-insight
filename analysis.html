@@ -51,6 +51,46 @@
       </div>
     </div>
 
+    <!-- 傾向分析：睡眠と状態 -->
+    <div class="card mb-3">
+      <div class="card-body">
+        <h2 class="fs-6 fw-bold mb-3">睡眠と状態の関係</h2>
+        <div id="trend-sleep">
+          <p class="text-muted">読み込み中...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 傾向分析：外出と状態 -->
+    <div class="card mb-3">
+      <div class="card-body">
+        <h2 class="fs-6 fw-bold mb-3">外出と状態の関係</h2>
+        <div id="trend-outing">
+          <p class="text-muted">読み込み中...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 傾向分析：人との交流と状態 -->
+    <div class="card mb-3">
+      <div class="card-body">
+        <h2 class="fs-6 fw-bold mb-3">人との交流と状態の関係</h2>
+        <div id="trend-social">
+          <p class="text-muted">読み込み中...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 傾向分析：作業時間と状態 -->
+    <div class="card mb-3">
+      <div class="card-body">
+        <h2 class="fs-6 fw-bold mb-3">作業時間と状態の関係</h2>
+        <div id="trend-work">
+          <p class="text-muted">読み込み中...</p>
+        </div>
+      </div>
+    </div>
+
   </div><!-- /container -->
 
   <!-- Bootstrap 5 JS -->
@@ -358,6 +398,187 @@
     showMorningEveningChange(records);
     showWeeklyTrend(records);
 
+    // ============================
+    // 傾向分析の共通ヘルパー
+    // ============================
+
+    // 活力サインを数値に変換する（比較のため）
+    function vitalityToScore(vitality) {
+      if (vitality === 'やる気十分')      return 3;
+      if (vitality === '普通')            return 2;
+      if (vitality === '取りかかりが重い') return 1;
+      if (vitality === '何もしたくない')   return 0;
+      return null;
+    }
+
+    // 活力スコアの平均を計算する
+    function averageVitality(eveningRecords) {
+      var scores = eveningRecords
+        .map(function(r) { return vitalityToScore(r.vitality); })
+        .filter(function(s) { return s !== null; });
+
+      if (scores.length === 0) return null;
+
+      var sum = scores.reduce(function(a, b) { return a + b; }, 0);
+      return (sum / scores.length).toFixed(1);
+    }
+
+    // 活力スコアを日本語に変換する
+    function scoreToText(score) {
+      if (score === null) return '記録なし';
+      if (score >= 2.5)  return 'やる気十分';
+      if (score >= 1.5)  return '普通';
+      if (score >= 0.5)  return '取りかかりが重い';
+      return '何もしたくない';
+    }
+
+    // データが少ない場合のメッセージを返す
+    function notEnoughData(container) {
+      container.innerHTML = '<p class="text-muted">データが少ないため傾向が出ません（3件以上記録すると表示されます）</p>';
+    }
+
+    // 比較結果をHTMLで表示する
+    function showComparison(container, rows) {
+      var html = '<table class="table table-sm">';
+      html += '<thead><tr><th class="text-muted fw-normal">条件</th><th class="text-muted fw-normal">件数</th><th class="text-muted fw-normal">平均活力</th></tr></thead>';
+      html += '<tbody>';
+      rows.forEach(function(row) {
+        html += '<tr>';
+        html += '<td>' + row.label + '</td>';
+        html += '<td class="text-muted">' + row.count + '件</td>';
+        html += '<td>' + scoreToText(row.avg) + ' <span class="text-muted small">(' + (row.avg !== null ? row.avg : '-') + ')</span></td>';
+        html += '</tr>';
+      });
+      html += '</tbody></table>';
+      container.innerHTML = html;
+    }
+
+    // ============================
+    // 睡眠と状態の関係
+    // ============================
+
+    function showTrendSleep(records) {
+      var container = document.getElementById('trend-sleep');
+
+      // 朝の記録（睡眠時間あり）と同日の夜の記録を紐づける
+      var pairs = [];
+      records.forEach(function(r) {
+        if (r.type === 'morning' && r.sleepHours !== '') {
+          var evening = records.find(function(e) {
+            return e.type === 'evening' && e.date === r.date;
+          });
+          if (evening) {
+            pairs.push({
+              sleepHours: parseFloat(r.sleepHours),
+              evening: evening
+            });
+          }
+        }
+      });
+
+      if (pairs.length < 3) {
+        notEnoughData(container);
+        return;
+      }
+
+      // 睡眠時間で3グループに分ける
+      var short  = pairs.filter(function(p) { return p.sleepHours < 6; });
+      var middle = pairs.filter(function(p) { return p.sleepHours >= 6 && p.sleepHours < 8; });
+      var long   = pairs.filter(function(p) { return p.sleepHours >= 8; });
+
+      showComparison(container, [
+        { label: '6時間未満',   count: short.length,  avg: averageVitality(short.map(function(p)  { return p.evening; })) },
+        { label: '6〜8時間',    count: middle.length, avg: averageVitality(middle.map(function(p) { return p.evening; })) },
+        { label: '8時間以上',   count: long.length,   avg: averageVitality(long.map(function(p)   { return p.evening; })) }
+      ]);
+    }
+
+    // ============================
+    // 外出と状態の関係
+    // ============================
+
+    function showTrendOuting(records) {
+      var container = document.getElementById('trend-outing');
+
+      var eveningRecords = records.filter(function(r) {
+        return r.type === 'evening' && r.outing !== null;
+      });
+
+      if (eveningRecords.length < 3) {
+        notEnoughData(container);
+        return;
+      }
+
+      var went    = eveningRecords.filter(function(r) { return r.outing === 'した'; });
+      var stayed  = eveningRecords.filter(function(r) { return r.outing === 'しなかった'; });
+
+      showComparison(container, [
+        { label: '外出した',      count: went.length,   avg: averageVitality(went) },
+        { label: '外出しなかった', count: stayed.length, avg: averageVitality(stayed) }
+      ]);
+    }
+
+    // ============================
+    // 人との交流と状態の関係
+    // ============================
+
+    function showTrendSocial(records) {
+      var container = document.getElementById('trend-social');
+
+      var eveningRecords = records.filter(function(r) {
+        return r.type === 'evening' && r.socializing !== null;
+      });
+
+      if (eveningRecords.length < 3) {
+        notEnoughData(container);
+        return;
+      }
+
+      var hadSocial  = eveningRecords.filter(function(r) { return r.socializing === 'あった'; });
+      var noSocial   = eveningRecords.filter(function(r) { return r.socializing === 'なかった'; });
+
+      showComparison(container, [
+        { label: '交流あった',   count: hadSocial.length, avg: averageVitality(hadSocial) },
+        { label: '交流なかった', count: noSocial.length,  avg: averageVitality(noSocial) }
+      ]);
+    }
+
+    // ============================
+    // 作業時間と状態の関係
+    // ============================
+
+    function showTrendWork(records) {
+      var container = document.getElementById('trend-work');
+
+      var eveningRecords = records.filter(function(r) {
+        return r.type === 'evening' && r.workHours !== '';
+      });
+
+      if (eveningRecords.length < 3) {
+        notEnoughData(container);
+        return;
+      }
+
+      // 作業時間で3グループに分ける
+      var short  = eveningRecords.filter(function(r) { return parseFloat(r.workHours) < 2; });
+      var middle = eveningRecords.filter(function(r) { return parseFloat(r.workHours) >= 2 && parseFloat(r.workHours) < 6; });
+      var long   = eveningRecords.filter(function(r) { return parseFloat(r.workHours) >= 6; });
+
+      showComparison(container, [
+        { label: '2時間未満', count: short.length,  avg: averageVitality(short) },
+        { label: '2〜6時間',  count: middle.length, avg: averageVitality(middle) },
+        { label: '6時間以上', count: long.length,   avg: averageVitality(long) }
+      ]);
+    }
+
+    // ============================
+    // 傾向分析を実行する
+    // ============================
+
+    showTrendSleep(records);
+    showTrendOuting(records);
+    showTrendSocial(records);
+    showTrendWork(records);
   </script>
 
 </body>
