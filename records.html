@@ -25,9 +25,10 @@
     </div>
 
     <!-- 記録一覧 -->
-    <div id="records-container">
-      <!-- JavaScriptで記録を挿入する -->
-    </div>
+    <div id="calendar-container"></div>
+
+    <!-- 記録の詳細表示エリア -->
+    <div id="record-detail" class="mt-3"></div>
 
     <!-- 記録がない場合のメッセージ -->
     <div id="empty-message" style="display: none;">
@@ -58,168 +59,359 @@
     }
 
     // ============================
-    // 配列を見やすい文字列に変換する
+    // 記録の状態を表す文字を返す
+    // ============================
+    function getRecordStatus(record) {
+
+      if (record.morning && record.evening) {
+        return '◎';
+      }
+
+      if (record.morning || record.evening) {
+        return '〇';
+      }
+
+      return '';
+    }
+
+    // ============================
+    // カレンダーを描画する
+    // ============================
+    function renderCalendar(records) {
+
+      var container = document.getElementById('calendar-container');
+
+      var today = new Date();
+
+      var year = today.getFullYear();
+      var month = today.getMonth();
+
+      var firstDay = new Date(year, month, 1);
+      var lastDay = new Date(year, month + 1, 0);
+
+      var startWeekday = firstDay.getDay();
+      var daysInMonth = lastDay.getDate();
+
+      var html = '';
+
+      html += `
+        <div class="card">
+          <div class="card-body">
+            <h5 class="mb-3">${year}年${month + 1}月</h5>
+
+            <table class="table table-bordered text-center align-middle">
+              <thead>
+                <tr>
+                  <th>日</th>
+                  <th>月</th>
+                  <th>火</th>
+                  <th>水</th>
+                  <th>木</th>
+                  <th>金</th>
+                  <th>土</th>
+                </tr>
+              </thead>
+              <tbody>
+      `;
+
+      var day = 1;
+
+      for (var row = 0; row < 6; row++) {
+
+        html += '<tr>';
+
+        for (var col = 0; col < 7; col++) {
+
+          if (
+            (row === 0 && col < startWeekday) ||
+            day > daysInMonth
+          ) {
+
+            html += '<td></td>';
+
+          } else {
+
+            var dateString =
+              year + '-' +
+              String(month + 1).padStart(2, '0') + '-' +
+              String(day).padStart(2, '0');
+
+            var record = records.find(function(r) {
+              return r.date === dateString;
+            });
+
+            var status = record
+              ? getRecordStatus(record)
+              : '';
+
+            html += `
+              <td
+                style="cursor:pointer;"
+                onclick="showRecordDetail('${dateString}')"
+              >
+                <div>${day}</div>
+                <div>${status}</div>
+              </td>
+            `;
+
+            day++;
+          }
+        }
+
+        html += '</tr>';
+
+        if (day > daysInMonth) {
+          break;
+        }
+      }
+
+      html += `
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+
+      container.innerHTML = html;
+    }
+
+
+    // ============================
+    // 日付をクリックしたときに記録の詳細を表示する
     // ============================
 
-    function arrayToText(arr) {
+    function listToHtml(arr) {
+
       if (!arr || arr.length === 0) {
-        return '<span class="text-muted">なし</span>';
+        return '<div class="text-muted">なし</div>';
       }
+
       return arr.map(function(item) {
-        return '<span class="badge bg-light text-dark border me-1">' + item + '</span>';
+        return '<div>・' + item + '</div>';
       }).join('');
     }
 
-    function valueToText(value) {
-      if (!value || value === '') {
-        return '<span class="text-muted">未記入</span>';
+    function vitalityToScore(vitality) {
+
+      switch (vitality) {
+
+        case 'いつもより動けそう':
+        case '想定以上に動けた':
+          return 3;
+
+        case 'いつも通りのことはできる':
+        case '普段通りに動けた':
+          return 2;
+
+        case '少し頑張れば動ける':
+        case '最低限は動けた':
+          return 1;
+
+        case '何もしたくない':
+        case 'ほとんど動けなかった':
+          return 0;
+
+        default:
+          return null;
       }
-      return value;
     }
 
-    // ============================
-    // 記録カードを1件分作る
-    // ============================
+    function getVitalityChange(record) {
 
-    function createRecordCard(record, index) {
+      if (!record.morning || !record.evening) {
+        return '比較不可';
+      }
 
-      // 朝の記録カード
-      if (record.type === 'morning') {
-        return `
-          <div class="card mb-3">
+      var morningScore = vitalityToScore(record.morning.vitality);
+      var eveningScore = vitalityToScore(record.evening.vitality);
+
+      if (morningScore === null || eveningScore === null) {
+        return '比較不可';
+      }
+
+      if (eveningScore > morningScore) {
+        return '上昇';
+      }
+
+      if (eveningScore < morningScore) {
+        return '低下';
+      }
+
+      return '変化なし';
+    }
+
+    function generateDailySummary(record) {
+
+      if (!record.evening) {
+        return null;
+      }
+
+      return {
+        body: {
+          morning: record.morning?.body || [],
+          evening: record.evening?.body || []
+        },
+
+        mental: {
+          morning: record.morning?.mental || [],
+          evening: record.evening?.mental || []
+        },
+
+        vitality: record.evening.vitality,
+
+        workHours: record.evening.workHours || 0,
+        outing: record.evening.outing || '未記録',
+        socializing: record.evening.socializing || '未記録',
+
+        doneCount: (record.evening.done || []).length,
+        hardCount: (record.evening.hard || []).length,
+
+        vitalityChange: getVitalityChange(record)
+      };
+    }
+    
+    function showRecordDetail(dateString) {
+
+      var records = loadRecords();
+
+      var record = records.find(function(r) {
+        return r.date === dateString;
+      });
+
+      var summary = generateDailySummary(record);
+
+      var container = document.getElementById('record-detail');
+
+      if (!record) {
+
+        container.innerHTML = `
+          <div class="card">
             <div class="card-body">
-
-              <!-- 日時・種別 -->
-              <div class="d-flex justify-content-between align-items-center mb-3">
-                <div>
-                  <span class="fw-bold">${record.date}</span>
-                  <span class="text-muted ms-2">${record.time}</span>
-                </div>
-                <span class="badge bg-warning text-dark">朝</span>
-              </div>
-
-              <!-- 体調サイン -->
-              <div class="mb-2">
-                <div class="text-muted small mb-1">体調サイン</div>
-                <div>${arrayToText(record.body)}</div>
-              </div>
-
-              <!-- メンタルサイン -->
-              <div class="mb-2">
-                <div class="text-muted small mb-1">メンタルサイン</div>
-                <div>${arrayToText(record.mental)}</div>
-              </div>
-
-              <!-- 活力サイン -->
-              <div class="mb-2">
-                <div class="text-muted small mb-1">活力サイン</div>
-                <div>${valueToText(record.vitality)}</div>
-              </div>
-
-              <!-- 睡眠 -->
-              <div>
-                <div class="text-muted small mb-1">睡眠</div>
-                <div>
-                  ${valueToText(record.sleepHours)} 時間 ／
-                  満足度 ${valueToText(record.sleepQuality)}
-                </div>
-              </div>
-
-              <!-- 天気・気温・気圧 -->
-              ${(record.weather || record.temperature !== null) ? `
-              <div class="mt-2">
-                <div class="text-muted small mb-1">天気・気温・気圧</div>
-                <div>
-                  ${record.weather || '不明'} ／
-                  ${record.temperature !== null ? record.temperature + '℃' : '不明'} ／
-                  ${record.pressure !== null && record.pressure !== undefined ? record.pressure + 'hPa' : '不明'}
-                </div>
-              </div>` : ''}
+              <h5>${dateString}</h5>
+              <p class="text-muted mb-0">記録なし</p>
             </div>
           </div>
         `;
+
+        return;
       }
 
-      // 夜の記録カード
-      if (record.type === 'evening') {
-        return `
-          <div class="card mb-3">
-            <div class="card-body">
+      container.innerHTML = `
+        <div class="card">
+          <div class="card-body">
 
-              <!-- 日時・種別 -->
-              <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-3">${dateString}</h5>
+
+            <h6>朝</h6>
+            ${
+              record.morning
+              ? `
+                <h6 class="mt-3">体調</h6>
+                ${listToHtml(record.morning.body)}
+
+                <h6 class="mt-3">メンタル</h6>
+                ${listToHtml(record.morning.mental)}
+
+                <h6 class="mt-3">活力</h6>
+                <div>${record.morning.vitality || '-'}</div>
+
+                <h6 class="mt-3">睡眠</h6>
+                <div>${record.morning.sleepHours || '-'} 時間</div>
+                <div>満足度 ${record.morning.sleepQuality || '-'}</div>
+              `
+              : '<div class="text-muted">未記録</div>'
+            }
+
+            <hr>
+
+            <h6>夜</h6>
+            ${
+              record.evening
+              ? `
+                <h6 class="mt-3">体調</h6>
+                ${listToHtml(record.evening.body)}
+
+                <h6 class="mt-3">メンタル</h6>
+                ${listToHtml(record.evening.mental)}
+
+                <h6 class="mt-3">活力</h6>
+                <div>${record.evening.vitality || '-'}</div>
+
+                <h6 class="mt-3">行動</h6>
+                <div>作業時間：${record.evening.workHours || 0}時間</div>
+                <div>外出：${record.evening.outing || '-'}</div>
+                <div>交流：${record.evening.socializing || '-'}</div>
+
+                <h6 class="mt-3">できたこと</h6>
+                ${listToHtml(record.evening.done)}
+
+                <h6 class="mt-3">大変だったこと</h6>
+                ${listToHtml(record.evening.hard)}
+
+                ${
+                  record.evening.memo
+                  ? `
+                    <h6 class="mt-3">メモ</h6>
+                    <div>${record.evening.memo}</div>
+                  `
+                  : ''
+                }
+              `
+              : '<div class="text-muted">未記録</div>'
+            }
+
+            ${
+              summary
+              ? `
+                <hr>
+
+                <h5>今日のまとめ</h5>
+
+                <h6 class="mt-3">状態</h6>
+
                 <div>
-                  <span class="fw-bold">${record.date}</span>
-                  <span class="text-muted ms-2">${record.time}</span>
+                  <h6>体調</h6>
+                  <div class="text-muted">朝</div>
+                  ${listToHtml(summary.body.morning)}
+
+                  <div class="text-muted mt-2">夜</div>
+                  ${listToHtml(summary.body.evening)}
                 </div>
-                <span class="badge bg-primary">夜</span>
-              </div>
 
-              <!-- 体調サイン -->
-              <div class="mb-2">
-                <div class="text-muted small mb-1">体調サイン</div>
-                <div>${arrayToText(record.body)}</div>
-              </div>
-
-              <!-- メンタルサイン -->
-              <div class="mb-2">
-                <div class="text-muted small mb-1">メンタルサイン</div>
-                <div>${arrayToText(record.mental)}</div>
-              </div>
-
-              <!-- 活力サイン -->
-              <div class="mb-2">
-                <div class="text-muted small mb-1">活力サイン</div>
-                <div>${valueToText(record.vitality)}</div>
-              </div>
-
-              <!-- 行動 -->
-              <div class="mb-2">
-                <div class="text-muted small mb-1">行動</div>
                 <div>
-                  作業 ${valueToText(record.workHours)} 時間 ／
-                  外出 ${valueToText(record.outing)} ／
-                  交流 ${valueToText(record.socializing)}
+                  <h6>メンタル</h6>
+                  <div class="text-muted">朝</div>
+                  ${listToHtml(summary.mental.morning)}
+
+                  <div class="text-muted mt-2">夜</div>
+                  ${listToHtml(summary.mental.evening)}
                 </div>
-              </div>
 
-              <!-- できたこと -->
-              <div class="mb-2">
-                <div class="text-muted small mb-1">今日できたこと</div>
-                <div>${arrayToText(record.done)}</div>
-              </div>
-
-              <!-- 大変だったこと -->
-              <div class="mb-2">
-                <div class="text-muted small mb-1">今日大変だったこと</div>
-                <div>${arrayToText(record.hard)}</div>
-              </div>
-
-              <!-- 天気・気温・気圧 -->
-              ${(record.weather || record.temperature !== null) ? `
-              <div class="mt-2">
-                <div class="text-muted small mb-1">天気・気温・気圧</div>
                 <div>
-                  ${record.weather || '不明'} ／
-                  ${record.temperature !== null ? record.temperature + '℃' : '不明'} ／
-                  ${record.pressure !== null && record.pressure !== undefined ? record.pressure + 'hPa' : '不明'}
+                  活力：
+                  ${summary.vitality || '未記録'}
                 </div>
-              </div>` : ''}
 
-              <!-- 補足メモ -->
-              ${record.memo ? `
-              <div>
-                <div class="text-muted small mb-1">補足メモ</div>
-                <div class="text-break">${record.memo}</div>
-              </div>` : ''}
+                <h6 class="mt-3">行動</h6>
 
-            </div>
+                <div>作業時間：${summary.workHours}時間</div>
+                <div>外出：${summary.outing}</div>
+                <div>交流：${summary.socializing}</div>
+
+                <h6 class="mt-3">出来事</h6>
+
+                <div>できたこと：${summary.doneCount}件</div>
+                <div>大変だったこと：${summary.hardCount}件</div>
+
+                <h6 class="mt-3">変化</h6>
+
+                <div>活力：${summary.vitalityChange}</div>
+              `
+              : ''
+            }
           </div>
-        `;
-      }
-
-      // 想定外のtypeが来た場合（将来の保険）
-      return '';
+        </div>
+      `;
     }
 
     // ============================
@@ -228,20 +420,8 @@
 
     var records = loadRecords();
 
-    if (records.length === 0) {
+    renderCalendar(records);
 
-      // 記録がない場合
-      document.getElementById('empty-message').style.display = 'block';
-
-    } else {
-
-      // 新しい順（末尾から）に表示する
-      var container = document.getElementById('records-container');
-      for (var i = records.length - 1; i >= 0; i--) {
-        container.innerHTML += createRecordCard(records[i], i);
-      }
-
-    }
   </script>
 
 </body>

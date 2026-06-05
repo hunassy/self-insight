@@ -47,52 +47,6 @@
     <h1 class="fs-4 fw-bold mb-1">Self Insight</h1>
     <p class="text-muted mb-4">朝の記録</p>
 
-    <!-- 体調サイン -->
-    <div class="card mb-3">
-      <div class="card-body">
-        <h2 class="fs-6 fw-bold mb-3">体調サイン <span class="text-muted fw-normal">（複数選択）</span></h2>
-        <div class="sign-btn">
-          <span><input type="checkbox" id="b1" name="body[]" value="元気"><label for="b1">元気</label></span>
-          <span><input type="checkbox" id="b2" name="body[]" value="少しだるい"><label for="b2">少しだるい</label></span>
-          <span><input type="checkbox" id="b3" name="body[]" value="強くだるい"><label for="b3">強くだるい</label></span>
-          <span><input type="checkbox" id="b4" name="body[]" value="眠い"><label for="b4">眠い</label></span>
-          <span><input type="checkbox" id="b5" name="body[]" value="頭痛"><label for="b5">頭痛</label></span>
-          <span><input type="checkbox" id="b6" name="body[]" value="胃腸不調"><label for="b6">胃腸不調</label></span>
-          <span><input type="checkbox" id="b7" name="body[]" value="肩こり"><label for="b7">肩こり</label></span>
-        </div>
-      </div>
-    </div>
-
-    <!-- メンタルサイン -->
-    <div class="card mb-3">
-      <div class="card-body">
-        <h2 class="fs-6 fw-bold mb-3">メンタルサイン <span class="text-muted fw-normal">（複数選択）</span></h2>
-        <div class="sign-btn">
-          <span><input type="checkbox" id="m1" name="mental[]" value="穏やか"><label for="m1">穏やか</label></span>
-          <span><input type="checkbox" id="m2" name="mental[]" value="前向き"><label for="m2">前向き</label></span>
-          <span><input type="checkbox" id="m3" name="mental[]" value="不安"><label for="m3">不安</label></span>
-          <span><input type="checkbox" id="m4" name="mental[]" value="落ち込み"><label for="m4">落ち込み</label></span>
-          <span><input type="checkbox" id="m5" name="mental[]" value="イライラ"><label for="m5">イライラ</label></span>
-          <span><input type="checkbox" id="m6" name="mental[]" value="焦り"><label for="m6">焦り</label></span>
-          <span><input type="checkbox" id="m7" name="mental[]" value="無気力"><label for="m7">無気力</label></span>
-          <span><input type="checkbox" id="m8" name="mental[]" value="緊張"><label for="m8">緊張</label></span>
-        </div>
-      </div>
-    </div>
-
-    <!-- 活力サイン -->
-    <div class="card mb-3">
-      <div class="card-body">
-        <h2 class="fs-6 fw-bold mb-3">活力サイン <span class="text-muted fw-normal">（1つ選択）</span></h2>
-        <div class="sign-btn">
-          <span><input type="radio" id="v1" name="vitality" value="やる気十分"><label for="v1">やる気十分</label></span>
-          <span><input type="radio" id="v2" name="vitality" value="普通"><label for="v2">普通</label></span>
-          <span><input type="radio" id="v3" name="vitality" value="取りかかりが重い"><label for="v3">取りかかりが重い</label></span>
-          <span><input type="radio" id="v4" name="vitality" value="何もしたくない"><label for="v4">何もしたくない</label></span>
-        </div>
-      </div>
-    </div>
-
     <!-- 睡眠 -->
     <div class="card mb-4">
       <div class="card-body">
@@ -124,6 +78,58 @@
           </div>
         </div>
 
+      </div>
+    </div>
+
+    <!-- 体調サイン -->
+    <div class="card mb-3">
+      <div class="card-body">
+        <h2 class="fs-6 fw-bold mb-3">体調サイン <span class="text-muted fw-normal">（複数選択）</span></h2>
+        <div class="sign-btn">
+          <span><input type="checkbox" id="b1" name="body[]" value="問題なし"><label for="b1">問題なし</label></span>
+          <span><input type="checkbox" id="b2" name="body[]" value="身体が軽い"><label for="b2">身体が軽い</label></span>
+          <span><input type="checkbox" id="b3" name="body[]" value="眠い"><label for="b3">眠い</label></span>
+          <span><input type="checkbox" id="b4" name="body[]" value="だるい"><label for="b4">だるい</label></span>
+          <span><input type="checkbox" id="b5" name="body[]" value="強い疲労感"><label for="b5">強い疲労感</label></span>
+          <span><input type="checkbox" id="b6" name="body[]" value="目の疲れ"><label for="b6">目の疲れ</label></span>
+          <span><input type="checkbox" id="b7" name="body[]" value="頭痛"><label for="b7">頭痛</label></span>
+          <span><input type="checkbox" id="b8" name="body[]" value="肩こり・首こり"><label for="b8">肩こり・首こり</label></span>
+          <span><input type="checkbox" id="b9" name="body[]" value="食欲不振"><label for="b9">食欲不振</label></span>
+          <span><input type="checkbox" id="b10" name="body[]" value="過食"><label for="b10">過食</label></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- メンタルサイン -->
+    <div class="card mb-3">
+      <div class="card-body">
+        <h2 class="fs-6 fw-bold mb-3">メンタルサイン <span class="text-muted fw-normal">（複数選択）</span></h2>
+        <div class="sign-btn">
+          <span><input type="checkbox" id="m1" name="mental[]" value="穏やか"><label for="m1">穏やか</label></span>
+          <span><input type="checkbox" id="m2" name="mental[]" value="前向き"><label for="m2">前向き</label></span>
+          <span><input type="checkbox" id="m3" name="mental[]" value="不安"><label for="m3">不安</label></span>
+          <span><input type="checkbox" id="m4" name="mental[]" value="落ち込み"><label for="m4">落ち込み</label></span>
+          <span><input type="checkbox" id="m5" name="mental[]" value="イライラ"><label for="m5">イライラ</label></span>
+          <span><input type="checkbox" id="m6" name="mental[]" value="焦り"><label for="m6">焦り</label></span>
+          <span><input type="checkbox" id="m7" name="mental[]" value="無気力"><label for="m7">無気力</label></span>
+          <span><input type="checkbox" id="m8" name="mental[]" value="緊張"><label for="m8">緊張</label></span>
+          <span><input type="checkbox" id="m9" name="mental[]" value="考えがまとまらない"><label for="m9">考えがまとまらない</label></span>
+          <span><input type="checkbox" id="m10" name="mental[]" value="集中しにくい"><label for="m10">集中しにくい</label></span>
+          <span><input type="checkbox" id="m11" name="mental[]" value="憂鬱"><label for="m11">憂鬱</label></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 活力サイン -->
+    <div class="card mb-3">
+      <div class="card-body">
+        <h2 class="fs-6 fw-bold mb-3">活力サイン <span class="text-muted fw-normal">（1つ選択）</span></h2>
+        <div class="sign-btn">
+          <span><input type="radio" id="v1" name="vitality" value="いつもより動けそう"><label for="v1">いつもより動けそう</label></span>
+          <span><input type="radio" id="v2" name="vitality" value="いつも通りのことはできる"><label for="v2">いつも通りのことはできる</label></span>
+          <span><input type="radio" id="v3" name="vitality" value="少し頑張れば動ける"><label for="v3">少し頑張れば動ける</label></span>
+          <span><input type="radio" id="v4" name="vitality" value="何もしたくない"><label for="v4">何もしたくない</label></span>
+        </div>
       </div>
     </div>
 
@@ -184,11 +190,27 @@
       return JSON.parse(data);
     }
 
-    // 記録を1件追加して保存する
-    function saveRecord(newRecord) {
-      var records = loadRecords();   // 既存データを取得
-      records.push(newRecord);       // 新しいデータを追加
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(records));  // 上書き保存
+    function saveRecord(date, type, data) {
+      var records = loadRecords();
+
+      var record = records.find(function(r) {
+        return r.date === date;
+      });
+
+      if (!record) {
+        record = {
+          date: date,
+          morning: null,
+          evening: null,
+          scores: {},
+          summary: {}
+        };
+
+        records.push(record);
+      }
+
+      record[type] = data;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
     }
 
     // ============================
@@ -262,15 +284,17 @@
       btn.textContent = '取得中...';
 
       // 1. フォームの値を集める
+      var today = new Date().toISOString().split('T')[0];
+
       var record = {
-        date: new Date().toLocaleDateString('ja-JP'),
+        date: today,
         time: new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }),
         type: 'morning',
         body: getCheckedValues('body[]'),
         mental: getCheckedValues('mental[]'),
         vitality: getRadioValue('vitality'),
-        sleepHours: document.getElementById('sleep-hours').value,
-        sleepQuality: getRadioValue('sleep-quality'),
+        sleepHours: Number(document.getElementById('sleep-hours').value),
+        sleepQuality: Number(getRadioValue('sleep-quality')),
         weather: null,
         temperature: null,
         pressure: null
@@ -292,7 +316,20 @@
         })
         .finally(function() {
           // 3. localStorageに保存
-          saveRecord(record);
+          saveRecord(
+            record.date,
+            'morning',
+            {
+              body: record.body,
+              mental: record.mental,
+              vitality: record.vitality,
+              sleepHours: record.sleepHours,
+              sleepQuality: record.sleepQuality,
+              weather: record.weather,
+              temperature: record.temperature,
+              pressure: record.pressure
+            }
+          );
 
           // 4. コンソールに出力（デバッグ用）
           console.log('保存しました:', record);
