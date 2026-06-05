@@ -255,7 +255,7 @@
       var url = 'https://api.open-meteo.com/v1/forecast'
         + '?latitude=' + lat
         + '&longitude=' + lon
-        + '&current=temperature_2m,weathercode'
+        + '&current=temperature_2m,weathercode,surface_pressure'
         + '&timezone=Asia%2FTokyo';
 
       return fetch(url)
@@ -265,7 +265,8 @@
         .then(function(data) {
           return {
             temperature: data.current.temperature_2m,
-            weatherCode: data.current.weathercode
+            weatherCode: data.current.weathercode,
+            pressure: data.current.surface_pressure
           };
         });
     }
@@ -306,7 +307,8 @@
         hard: getCheckedValues('hard[]'),
         memo: document.getElementById('memo').value,
         weather: null,
-        temperature: null
+        temperature: null,
+        pressure: null
       };
 
       getLocation()
@@ -316,6 +318,7 @@
         .then(function(weather) {
           record.weather = weatherCodeToText(weather.weatherCode);
           record.temperature = weather.temperature;
+          record.pressure = weather.pressure;
         })
         .catch(function(error) {
           console.log('天気取得スキップ:', error);

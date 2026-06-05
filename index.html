@@ -221,7 +221,7 @@
       var url = 'https://api.open-meteo.com/v1/forecast'
         + '?latitude=' + lat
         + '&longitude=' + lon
-        + '&current=temperature_2m,weathercode'
+        + '&current=temperature_2m,weathercode,surface_pressure'
         + '&timezone=Asia%2FTokyo';
 
       return fetch(url)
@@ -231,7 +231,8 @@
         .then(function(data) {
           return {
             temperature: data.current.temperature_2m,
-            weatherCode: data.current.weathercode
+            weatherCode: data.current.weathercode,
+            pressure: data.current.surface_pressure
           };
         });
     }
@@ -271,7 +272,8 @@
         sleepHours: document.getElementById('sleep-hours').value,
         sleepQuality: getRadioValue('sleep-quality'),
         weather: null,
-        temperature: null
+        temperature: null,
+        pressure: null
       };
 
       // 2. 位置情報→天気を取得してから保存する
@@ -282,6 +284,7 @@
         .then(function(weather) {
           record.weather = weatherCodeToText(weather.weatherCode);
           record.temperature = weather.temperature;
+          record.pressure = weather.pressure;
         })
         .catch(function(error) {
           // 天気取得失敗でも記録は続行する

@@ -125,11 +125,15 @@
                 </div>
               </div>
 
-              <!-- 天気・気温 -->
+              <!-- 天気・気温・気圧 -->
               ${(record.weather || record.temperature !== null) ? `
               <div class="mt-2">
-                <div class="text-muted small mb-1">天気・気温</div>
-                <div>${record.weather || '不明'} ／ ${record.temperature !== null ? record.temperature + '℃' : '不明'}</div>
+                <div class="text-muted small mb-1">天気・気温・気圧</div>
+                <div>
+                  ${record.weather || '不明'} ／
+                  ${record.temperature !== null ? record.temperature + '℃' : '不明'} ／
+                  ${record.pressure !== null && record.pressure !== undefined ? record.pressure + 'hPa' : '不明'}
+                </div>
               </div>` : ''}
             </div>
           </div>
@@ -191,13 +195,17 @@
                 <div>${arrayToText(record.hard)}</div>
               </div>
 
-              <!-- 天気・気温 -->
+              <!-- 天気・気温・気圧 -->
               ${(record.weather || record.temperature !== null) ? `
               <div class="mt-2">
-                <div class="text-muted small mb-1">天気・気温</div>
-                <div>${record.weather || '不明'} ／ ${record.temperature !== null ? record.temperature + '℃' : '不明'}</div>
+                <div class="text-muted small mb-1">天気・気温・気圧</div>
+                <div>
+                  ${record.weather || '不明'} ／
+                  ${record.temperature !== null ? record.temperature + '℃' : '不明'} ／
+                  ${record.pressure !== null && record.pressure !== undefined ? record.pressure + 'hPa' : '不明'}
+                </div>
               </div>` : ''}
-              
+
               <!-- 補足メモ -->
               ${record.memo ? `
               <div>
