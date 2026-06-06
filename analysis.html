@@ -54,6 +54,33 @@
       <div class="card-body">
         <h2 class="fs-6 fw-bold mb-3">個別分析</h2>
 
+        <!-- 回復要因分析 -->
+        <div class="border-bottom pb-2 mb-2">
+          <div class="fw-bold small mb-1" style="cursor:pointer;"
+            onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
+            ▶ 回復要因分析
+          </div>
+          <div style="display:none;" id="detail-recovery"></div>
+        </div>
+
+        <!-- 悪化トリガー分析 -->
+        <div class="border-bottom pb-2 mb-2">
+          <div class="fw-bold small mb-1" style="cursor:pointer;"
+            onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
+            ▶ 悪化トリガー分析
+          </div>
+          <div style="display:none;" id="detail-trigger"></div>
+        </div>
+
+        <!-- 安定パターン分析 -->
+        <div class="border-bottom pb-2 mb-2">
+          <div class="fw-bold small mb-1" style="cursor:pointer;"
+            onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
+            ▶ 安定パターン分析
+          </div>
+          <div style="display:none;" id="detail-stable"></div>
+        </div>
+
         <!-- 睡眠と状態 -->
         <div class="border-bottom pb-2 mb-2">
           <div class="fw-bold small mb-1" style="cursor:pointer;"
@@ -82,12 +109,30 @@
         </div>
 
         <!-- 作業時間と状態 -->
-        <div class="pb-2">
+        <div class="border-bottom pb-2 mb-2">
           <div class="fw-bold small mb-1" style="cursor:pointer;"
             onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
             ▶ 作業時間と状態の関係
           </div>
           <div style="display:none;" id="detail-work"></div>
+        </div>
+
+        <!-- 天気と状態 -->
+        <div class="border-bottom pb-2 mb-2">
+          <div class="fw-bold small mb-1" style="cursor:pointer;"
+            onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
+            ▶ 天気と状態の関係
+          </div>
+          <div style="display:none;" id="detail-weather"></div>
+        </div>
+
+        <!-- 気圧と状態 -->
+        <div class="pb-2">
+          <div class="fw-bold small mb-1" style="cursor:pointer;"
+            onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
+            ▶ 気圧と状態の関係
+          </div>
+          <div style="display:none;" id="detail-pressure"></div>
         </div>
 
       </div>
@@ -209,6 +254,231 @@
     // データ不足メッセージ
     function notEnoughData() {
       return '<p class="text-muted small mt-2">データが少ないため表示できません（5件以上記録すると表示されます）</p>';
+    }
+
+    // ============================
+    // 回復要因分析
+    // ============================
+
+    function showDetailRecovery(validRecords) {
+      var container = document.getElementById('detail-recovery');
+
+      // 日付順に並べる
+      var sorted = validRecords.slice().sort(function(a, b) {
+        return a.date > b.date ? 1 : -1;
+      });
+
+      // 前日スコアが低かった日の翌日を探す
+      var recoveryDays = [];
+      for (var i = 0; i < sorted.length - 1; i++) {
+        var today = sorted[i];
+        var tomorrow = sorted[i + 1];
+
+        // 前日のスコアが低い（体調かメンタルがマイナス）
+        var isBadDay = today.scores.physical < 0 || today.scores.mental < 0;
+        if (!isBadDay) continue;
+
+        // 翌日が連続した日付かチェック
+        var todayDate    = new Date(today.date);
+        var tomorrowDate = new Date(tomorrow.date);
+        var diffDays = (tomorrowDate - todayDate) / (1000 * 60 * 60 * 24);
+        if (diffDays !== 1) continue;
+
+        recoveryDays.push({
+          prev: today,
+          next: tomorrow
+        });
+      }
+
+      if (recoveryDays.length < 5) {
+        container.innerHTML = notEnoughData();
+        return;
+      }
+
+      // 翌日に回復した日（eveningEnergyが上昇）としなかった日に分ける
+      var recovered    = recoveryDays.filter(function(d) { return d.next.scores.eveningEnergy > 0; });
+      var notRecovered = recoveryDays.filter(function(d) { return d.next.scores.eveningEnergy <= 0; });
+
+      // 回復した日の行動パターンを集計する
+      var recoveredOuting   = recovered.filter(function(d) { return d.next.evening.outing === 'した'; }).length;
+      var recoveredSocial   = recovered.filter(function(d) { return d.next.evening.socializing === 'あった'; }).length;
+      var recoveredSleep    = recovered.filter(function(d) { return d.next.morning.sleepHours >= 6.5; }).length;
+
+      var html = '<div class="mt-2">';
+      html += '<div class="small text-muted mb-2">前日に体調・メンタルが低下した翌日（' + recoveryDays.length + '件）</div>';
+
+      if (recovered.length > 0) {
+        html += '<div class="mb-1">回復した日の行動：</div>';
+        html += '<div class="small">・睡眠6.5時間以上：' + recoveredSleep + '件 / ' + recovered.length + '件</div>';
+        html += '<div class="small">・外出あり：' + recoveredOuting + '件 / ' + recovered.length + '件</div>';
+        html += '<div class="small">・交流あり：' + recoveredSocial + '件 / ' + recovered.length + '件</div>';
+      } else {
+        html += '<div class="text-muted small">回復した日のデータがまだ少ないです</div>';
+      }
+
+      html += '</div>';
+      container.innerHTML = html;
+    }
+
+    // ============================
+    // 悪化トリガー分析
+    // ============================
+
+    function showDetailTrigger(validRecords) {
+      var container = document.getElementById('detail-trigger');
+
+      if (validRecords.length < 5) {
+        container.innerHTML = notEnoughData();
+        return;
+      }
+
+      // スコアが低い日を「悪化した日」とする
+      var badDays = validRecords.filter(function(r) {
+        return r.scores.eveningEnergy < 0 || r.scores.mental < 0;
+      });
+
+      if (badDays.length < 5) {
+        container.innerHTML = notEnoughData();
+        return;
+      }
+
+      // 悪化した日の行動パターンを集計する
+      var shortSleep  = badDays.filter(function(r) { return r.morning.sleepHours < 6; }).length;
+      var noOuting    = badDays.filter(function(r) { return r.evening.outing === 'しなかった'; }).length;
+      var noSocial    = badDays.filter(function(r) { return r.evening.socializing === 'なかった'; }).length;
+      var longWork    = badDays.filter(function(r) { return r.evening.workHours >= 7; }).length;
+      var noWork      = badDays.filter(function(r) { return r.evening.workHours === 0; }).length;
+
+      var html = '<div class="mt-2">';
+      html += '<div class="small text-muted mb-2">活力・メンタルが低下した日（' + badDays.length + '件）の行動：</div>';
+      html += '<div class="small">・睡眠6時間未満：' + shortSleep + '件 / ' + badDays.length + '件</div>';
+      html += '<div class="small">・外出なし：' + noOuting + '件 / ' + badDays.length + '件</div>';
+      html += '<div class="small">・交流なし：' + noSocial + '件 / ' + badDays.length + '件</div>';
+      html += '<div class="small">・作業7時間以上：' + longWork + '件 / ' + badDays.length + '件</div>';
+      html += '<div class="small">・作業なし：' + noWork + '件 / ' + badDays.length + '件</div>';
+      html += '</div>';
+
+      container.innerHTML = html;
+    }
+
+    // ============================
+    // 安定パターン分析
+    // ============================
+
+    function showDetailStable(validRecords) {
+      var container = document.getElementById('detail-stable');
+
+      if (validRecords.length < 5) {
+        container.innerHTML = notEnoughData();
+        return;
+      }
+
+      // 安定した日：体調・メンタル・活力がすべてプラスの日
+      var stableDays = validRecords.filter(function(r) {
+        return r.scores.physical >= 0 &&
+               r.scores.mental >= 0 &&
+               r.scores.eveningEnergy > 0;
+      });
+
+      if (stableDays.length < 5) {
+        container.innerHTML = notEnoughData();
+        return;
+      }
+
+      // 安定した日の行動パターンを集計する
+      var sleep7     = stableDays.filter(function(r) { return r.morning.sleepHours >= 7; }).length;
+      var outing     = stableDays.filter(function(r) { return r.evening.outing === 'した'; }).length;
+      var social     = stableDays.filter(function(r) { return r.evening.socializing === 'あった'; }).length;
+      var work3to4   = stableDays.filter(function(r) { return r.evening.workHours >= 3 && r.evening.workHours <= 4; }).length;
+
+      var avgSleep   = average(stableDays.map(function(r) { return r.morning.sleepHours; }));
+      var avgWork    = average(stableDays.map(function(r) { return r.evening.workHours; }));
+
+      var html = '<div class="mt-2">';
+      html += '<div class="small text-muted mb-2">体調・メンタル・活力が安定した日（' + stableDays.length + '件）：</div>';
+      html += '<div class="small">・平均睡眠時間：' + (avgSleep !== null ? avgSleep.toFixed(1) : '-') + '時間</div>';
+      html += '<div class="small">・平均作業時間：' + (avgWork  !== null ? avgWork.toFixed(1)  : '-') + '時間</div>';
+      html += '<div class="small">・外出あり：' + outing + '件 / ' + stableDays.length + '件</div>';
+      html += '<div class="small">・交流あり：' + social + '件 / ' + stableDays.length + '件</div>';
+      html += '<div class="small">・睡眠7時間以上：' + sleep7 + '件 / ' + stableDays.length + '件</div>';
+      html += '<div class="small">・作業3〜4時間：' + work3to4 + '件 / ' + stableDays.length + '件</div>';
+      html += '</div>';
+
+      container.innerHTML = html;
+    }
+
+    // ============================
+    // 天気と状態の分析
+    // ============================
+
+    function showDetailWeather(validRecords) {
+      var container = document.getElementById('detail-weather');
+
+      if (validRecords.length < 5) {
+        container.innerHTML = notEnoughData();
+        return;
+      }
+
+      // 天気データがあるレコードのみ絞り込む
+      var weatherRecords = validRecords.filter(function(r) {
+        return r.morning && r.morning.weather;
+      });
+
+      if (weatherRecords.length < 5) {
+        container.innerHTML = notEnoughData();
+        return;
+      }
+
+      // 天気グループに分ける
+      var sunny  = weatherRecords.filter(function(r) { return r.morning.weather === '快晴' || r.morning.weather === '晴れ'; });
+      var cloudy = weatherRecords.filter(function(r) { return r.morning.weather === '曇り'; });
+      var rainy  = weatherRecords.filter(function(r) {
+        return r.morning.weather === '雨' || r.morning.weather === '霧雨' || r.morning.weather === 'にわか雨' || r.morning.weather === '雷雨';
+      });
+
+      var groups = [
+        { label: '晴れ', records: sunny },
+        { label: '曇り', records: cloudy },
+        { label: '雨',   records: rainy }
+      ];
+
+      container.innerHTML = renderDetailTable(groups);
+    }
+
+    // ============================
+    // 気圧と状態の分析
+    // ============================
+
+    function showDetailPressure(validRecords) {
+      var container = document.getElementById('detail-pressure');
+
+      if (validRecords.length < 5) {
+        container.innerHTML = notEnoughData();
+        return;
+      }
+
+      // 気圧データがあるレコードのみ絞り込む
+      var pressureRecords = validRecords.filter(function(r) {
+        return r.morning && r.morning.pressure;
+      });
+
+      if (pressureRecords.length < 5) {
+        container.innerHTML = notEnoughData();
+        return;
+      }
+
+      // 気圧グループに分ける
+      var low    = pressureRecords.filter(function(r) { return r.morning.pressure < 1000; });
+      var normal = pressureRecords.filter(function(r) { return r.morning.pressure >= 1000 && r.morning.pressure < 1013; });
+      var high   = pressureRecords.filter(function(r) { return r.morning.pressure >= 1013; });
+
+      var groups = [
+        { label: '低い（1000未満）',      records: low },
+        { label: '普通（1000〜1013）',    records: normal },
+        { label: '高い（1013以上）',      records: high }
+      ];
+
+      container.innerHTML = renderDetailTable(groups);
     }
 
     // 睡眠と状態の個別分析
@@ -486,10 +756,15 @@
     showAllPatterns(records);
 
     var validRecords = getValidRecords(records);
+    showDetailRecovery(validRecords);
+    showDetailTrigger(validRecords);
+    showDetailStable(validRecords);
     showDetailSleep(validRecords);
     showDetailOuting(validRecords);
     showDetailSocial(validRecords);
     showDetailWork(validRecords);
+    showDetailWeather(validRecords);
+    showDetailPressure(validRecords);
 
   </script>
 

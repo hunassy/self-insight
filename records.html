@@ -75,16 +75,41 @@
     }
 
     // ============================
+    // 表示中の年月を管理する
+    // ============================
+
+    var currentYear  = new Date().getFullYear();
+    var currentMonth = new Date().getMonth();
+
+    // 前月へ移動する
+    function goToPrevMonth() {
+      currentMonth--;
+      if (currentMonth < 0) {
+        currentMonth = 11;
+        currentYear--;
+      }
+      renderCalendar(loadRecords());
+    }
+
+    // 翌月へ移動する
+    function goToNextMonth() {
+      currentMonth++;
+      if (currentMonth > 11) {
+        currentMonth = 0;
+        currentYear++;
+      }
+      renderCalendar(loadRecords());
+    }
+
+    // ============================
     // カレンダーを描画する
     // ============================
     function renderCalendar(records) {
 
       var container = document.getElementById('calendar-container');
 
-      var today = new Date();
-
-      var year = today.getFullYear();
-      var month = today.getMonth();
+      var year  = currentYear;
+      var month = currentMonth;
 
       var firstDay = new Date(year, month, 1);
       var lastDay = new Date(year, month + 1, 0);
@@ -97,7 +122,11 @@
       html += `
         <div class="card">
           <div class="card-body">
-            <h5 class="mb-3">${year}年${month + 1}月</h5>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <button class="btn btn-outline-secondary btn-sm" onclick="goToPrevMonth()">＜</button>
+              <h5 class="mb-0">${year}年${month + 1}月</h5>
+              <button class="btn btn-outline-secondary btn-sm" onclick="goToNextMonth()">＞</button>
+            </div>
 
             <table class="table table-bordered text-center align-middle">
               <thead>
@@ -277,8 +306,6 @@
       var record = records.find(function(r) {
         return r.date === dateString;
       });
-
-      var summary = generateDailySummary(record);
 
       var container = document.getElementById('record-detail');
 
