@@ -4,8 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>分析 - Self Insight</title>
-
-  <!-- Bootstrap 5 CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
@@ -16,26 +14,16 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div>
         <h1 class="fs-4 fw-bold mb-1">Self Insight</h1>
-        <p class="text-muted mb-0">基本分析</p>
+        <p class="text-muted mb-0">分析</p>
       </div>
       <a href="records.html" class="btn btn-outline-secondary btn-sm">記録一覧</a>
     </div>
 
-    <!-- 今日のまとめ -->
+    <!-- 最近のパターン -->
     <div class="card mb-3">
       <div class="card-body">
-        <h2 class="fs-6 fw-bold mb-3">今日のまとめ</h2>
-        <div id="today-summary">
-          <p class="text-muted">読み込み中...</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- 朝→夜の変化 -->
-    <div class="card mb-3">
-      <div class="card-body">
-        <h2 class="fs-6 fw-bold mb-3">朝 → 夜の変化</h2>
-        <div id="morning-evening-change">
+        <h2 class="fs-6 fw-bold mb-3">最近のパターン <span class="text-muted fw-normal small">（直近30日）</span></h2>
+        <div id="recent-patterns">
           <p class="text-muted">読み込み中...</p>
         </div>
       </div>
@@ -51,685 +39,458 @@
       </div>
     </div>
 
-    <!-- 傾向分析：睡眠と状態 -->
+    <!-- 自分の傾向 -->
     <div class="card mb-3">
       <div class="card-body">
-        <h2 class="fs-6 fw-bold mb-3">睡眠と状態の関係</h2>
-        <div id="trend-sleep">
+        <h2 class="fs-6 fw-bold mb-3">自分の傾向 <span class="text-muted fw-normal small">（全期間）</span></h2>
+        <div id="all-patterns">
           <p class="text-muted">読み込み中...</p>
         </div>
       </div>
     </div>
 
-    <!-- 傾向分析：外出と状態 -->
+    <!-- 個別分析 -->
     <div class="card mb-3">
       <div class="card-body">
-        <h2 class="fs-6 fw-bold mb-3">外出と状態の関係</h2>
-        <div id="trend-outing">
-          <p class="text-muted">読み込み中...</p>
-        </div>
-      </div>
-    </div>
+        <h2 class="fs-6 fw-bold mb-3">個別分析</h2>
 
-    <!-- 傾向分析：人との交流と状態 -->
-    <div class="card mb-3">
-      <div class="card-body">
-        <h2 class="fs-6 fw-bold mb-3">人との交流と状態の関係</h2>
-        <div id="trend-social">
-          <p class="text-muted">読み込み中...</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- 傾向分析：作業時間と状態 -->
-    <div class="card mb-3">
-      <div class="card-body">
-        <h2 class="fs-6 fw-bold mb-3">作業時間と状態の関係</h2>
-        <div id="trend-work">
-          <p class="text-muted">読み込み中...</p>
-        </div>
-      </div>
-    </div>
-
-  </div><!-- /container -->
-
-  <!-- AI分析 -->
-    <div class="card mb-3">
-      <div class="card-body">
-        <h2 class="fs-6 fw-bold mb-3">AI分析</h2>
-
-        <!-- APIキー入力 -->
-        <div class="mb-3">
-          <label for="api-key" class="form-label text-muted small">Gemini APIキー</label>
-          <input type="password" id="api-key" class="form-control form-control-sm"
-            placeholder="AIzaSy...">
-          <div class="form-text">入力したキーはこの画面にのみ保存されます</div>
+        <!-- 睡眠と状態 -->
+        <div class="border-bottom pb-2 mb-2">
+          <div class="fw-bold small mb-1" style="cursor:pointer;"
+            onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
+            ▶ 睡眠と状態の関係
+          </div>
+          <div style="display:none;" id="detail-sleep"></div>
         </div>
 
-        <!-- 分析ボタン -->
-        <button type="button" class="btn btn-primary w-100" id="ai-analyze-btn">
-          AIに分析してもらう
-        </button>
+        <!-- 外出と状態 -->
+        <div class="border-bottom pb-2 mb-2">
+          <div class="fw-bold small mb-1" style="cursor:pointer;"
+            onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
+            ▶ 外出と状態の関係
+          </div>
+          <div style="display:none;" id="detail-outing"></div>
+        </div>
 
-        <!-- 結果表示 -->
-        <div id="ai-result" class="mt-3" style="display: none;"></div>
+        <!-- 交流と状態 -->
+        <div class="border-bottom pb-2 mb-2">
+          <div class="fw-bold small mb-1" style="cursor:pointer;"
+            onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
+            ▶ 交流と状態の関係
+          </div>
+          <div style="display:none;" id="detail-social"></div>
+        </div>
+
+        <!-- 作業時間と状態 -->
+        <div class="pb-2">
+          <div class="fw-bold small mb-1" style="cursor:pointer;"
+            onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
+            ▶ 作業時間と状態の関係
+          </div>
+          <div style="display:none;" id="detail-work"></div>
+        </div>
 
       </div>
     </div>
 
-  <!-- Bootstrap 5 JS -->
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
   <script>
     // ============================
-    // localStorageからデータを読む
+    // データの読み込み
     // ============================
 
     var STORAGE_KEY = 'selfInsightRecords';
 
     function loadRecords() {
       var data = localStorage.getItem(STORAGE_KEY);
-      if (data === null) {
-        return [];
-      }
+      if (data === null) return [];
       return JSON.parse(data);
     }
 
     // ============================
-    // ヘルパー関数
+    // 日付ヘルパー
     // ============================
 
-    // 配列をテキスト表示する（なしの場合は「なし」）
-    function arrayToText(arr) {
-      if (!arr || arr.length === 0) {
-        return '<span class="text-muted">なし</span>';
-      }
-      return arr.map(function(item) {
-        return '<span class="badge bg-light text-dark border me-1">' + item + '</span>';
-      }).join('');
-    }
-
-    // 値をテキスト表示する（空の場合は「未記入」）
-    function valueToText(value) {
-      if (!value || value === '') {
-        return '<span class="text-muted">未記入</span>';
-      }
-      return value;
-    }
-
-    // 今日の日付文字列を返す（記録の date と同じ形式）
+    // 今日の日付文字列を返す（2026-06-06形式）
     function getTodayString() {
-      return new Date().toLocaleDateString('ja-JP');
+      return new Date().toISOString().split('T')[0];
     }
 
-    // 過去N日分の日付文字列の配列を返す（今日を含む）
-    function getLastNDays(n) {
-      var days = [];
-      for (var i = 0; i < n; i++) {
-        var d = new Date();
-        d.setDate(d.getDate() - i);
-        days.push(d.toLocaleDateString('ja-JP'));
-      }
-      return days;
+    // 指定日付からN日前の日付文字列を返す
+    function getDaysAgo(baseDate, n) {
+      var d = new Date(baseDate);
+      d.setDate(d.getDate() - n);
+      return d.toISOString().split('T')[0];
     }
 
     // ============================
-    // 今日のまとめを表示する
+    // スコアのヘルパー
     // ============================
 
-    function showTodaySummary(records) {
+    // 信頼度ラベルを返す
+    function getConfidenceLabel(count) {
+      if (count >= 20) return '信頼度：高';
+      if (count >= 10) return '信頼度：中';
+      if (count >= 5)  return '信頼度：低';
+      return null;
+    }
+
+    // 差分から傾向テキストを返す
+    function getTrendLabel(diff) {
+      if (diff >= 1.0) return '強い傾向あり';
+      if (diff >= 0.5) return '傾向あり';
+      return null;
+    }
+
+    // スコアの平均を計算する
+    function average(arr) {
+      if (arr.length === 0) return null;
+      var sum = arr.reduce(function(a, b) { return a + b; }, 0);
+      return sum / arr.length;
+    }
+
+    // ============================
+    // 分析用データを絞り込む
+    // ============================
+
+    // 朝・夜両方あるレコードのみ返す
+    function getValidRecords(records) {
+      return records.filter(function(r) {
+        return r.morning && r.evening && r.scores &&
+          r.scores.physical !== undefined;
+      });
+    }
+
+    // 直近N日のレコードを返す
+    function getRecentRecords(records, days) {
       var today = getTodayString();
-      var container = document.getElementById('today-summary');
+      var from  = getDaysAgo(today, days);
+      return records.filter(function(r) {
+        return r.date >= from && r.date <= today;
+      });
+    }
 
-      // 今日の朝・夜の記録を探す
-      var morningRecord = null;
-      var eveningRecord = null;
+    // ============================
+    // 個別分析の表示
+    // ============================
 
-      records.forEach(function(r) {
-        if (r.date === today && r.type === 'morning') {
-          morningRecord = r;
-        }
-        if (r.date === today && r.type === 'evening') {
-          eveningRecord = r;
-        }
+    // グループごとのスコア平均を表示するHTML
+    function renderDetailTable(groups) {
+      var html = '<table class="table table-sm mt-2">';
+      html += '<thead><tr>';
+      html += '<th class="text-muted fw-normal small">条件</th>';
+      html += '<th class="text-muted fw-normal small">件数</th>';
+      html += '<th class="text-muted fw-normal small">体調</th>';
+      html += '<th class="text-muted fw-normal small">メンタル</th>';
+      html += '<th class="text-muted fw-normal small">活力</th>';
+      html += '</tr></thead><tbody>';
+
+      groups.forEach(function(g) {
+        var physical = average(g.records.map(function(r) { return r.scores.physical; }));
+        var mental   = average(g.records.map(function(r) { return r.scores.mental; }));
+        var energy   = average(g.records.map(function(r) { return r.scores.eveningEnergy; }));
+
+        html += '<tr>';
+        html += '<td class="small">' + g.label + '</td>';
+        html += '<td class="small text-muted">' + g.records.length + '件</td>';
+        html += '<td class="small">' + (physical !== null ? physical.toFixed(1) : '-') + '</td>';
+        html += '<td class="small">' + (mental   !== null ? mental.toFixed(1)   : '-') + '</td>';
+        html += '<td class="small">' + (energy   !== null ? energy.toFixed(1)   : '-') + '</td>';
+        html += '</tr>';
       });
 
-      // どちらもない場合
-      if (!morningRecord && !eveningRecord) {
-        container.innerHTML = '<p class="text-muted">今日の記録がありません</p>';
+      html += '</tbody></table>';
+      return html;
+    }
+
+    // データ不足メッセージ
+    function notEnoughData() {
+      return '<p class="text-muted small mt-2">データが少ないため表示できません（5件以上記録すると表示されます）</p>';
+    }
+
+    // 睡眠と状態の個別分析
+    function showDetailSleep(validRecords) {
+      var container = document.getElementById('detail-sleep');
+      if (validRecords.length < 5) {
+        container.innerHTML = notEnoughData();
         return;
+      }
+
+      var groups = [
+        { label: '6時間未満', records: validRecords.filter(function(r) { return r.morning.sleepHours < 6; }) },
+        { label: '6〜7時間',  records: validRecords.filter(function(r) { return r.morning.sleepHours >= 6 && r.morning.sleepHours < 7; }) },
+        { label: '7時間以上', records: validRecords.filter(function(r) { return r.morning.sleepHours >= 7; }) }
+      ];
+
+      container.innerHTML = renderDetailTable(groups);
+    }
+
+    // 外出と状態の個別分析
+    function showDetailOuting(validRecords) {
+      var container = document.getElementById('detail-outing');
+      if (validRecords.length < 5) {
+        container.innerHTML = notEnoughData();
+        return;
+      }
+
+      var groups = [
+        { label: '外出した',      records: validRecords.filter(function(r) { return r.evening.outing === 'した'; }) },
+        { label: '外出しなかった', records: validRecords.filter(function(r) { return r.evening.outing === 'しなかった'; }) }
+      ];
+
+      container.innerHTML = renderDetailTable(groups);
+    }
+
+    // 交流と状態の個別分析
+    function showDetailSocial(validRecords) {
+      var container = document.getElementById('detail-social');
+      if (validRecords.length < 5) {
+        container.innerHTML = notEnoughData();
+        return;
+      }
+
+      var groups = [
+        { label: '交流あった',   records: validRecords.filter(function(r) { return r.evening.socializing === 'あった'; }) },
+        { label: '交流なかった', records: validRecords.filter(function(r) { return r.evening.socializing === 'なかった'; }) }
+      ];
+
+      container.innerHTML = renderDetailTable(groups);
+    }
+
+    // 作業時間と状態の個別分析
+    function showDetailWork(validRecords) {
+      var container = document.getElementById('detail-work');
+      if (validRecords.length < 5) {
+        container.innerHTML = notEnoughData();
+        return;
+      }
+
+      var groups = [
+        { label: '0時間',    records: validRecords.filter(function(r) { return r.evening.workHours === 0; }) },
+        { label: '1〜3時間', records: validRecords.filter(function(r) { return r.evening.workHours > 0 && r.evening.workHours <= 3; }) },
+        { label: '4〜6時間', records: validRecords.filter(function(r) { return r.evening.workHours > 3 && r.evening.workHours <= 6; }) },
+        { label: '7時間以上', records: validRecords.filter(function(r) { return r.evening.workHours > 6; }) }
+      ];
+
+      container.innerHTML = renderDetailTable(groups);
+    }
+
+    // ============================
+    // パターン発見（最近・全期間共通）
+    // ============================
+
+    // 候補パターンを全部試してスコア差分が大きい順に返す
+    function findPatterns(validRecords, topN) {
+
+      var results = [];
+
+      // --- 睡眠 ---
+      var sleepShort  = validRecords.filter(function(r) { return r.morning.sleepHours < 6; });
+      var sleepMiddle = validRecords.filter(function(r) { return r.morning.sleepHours >= 6 && r.morning.sleepHours < 7; });
+      var sleepLong   = validRecords.filter(function(r) { return r.morning.sleepHours >= 7; });
+
+      [
+        { group: sleepLong,   other: sleepShort,  label: '睡眠7時間以上の日は', metric: 'eveningEnergy', metricLabel: '活力が高い' },
+        { group: sleepShort,  other: sleepLong,   label: '睡眠6時間未満の日は', metric: 'eveningEnergy', metricLabel: '活力が低い' },
+        { group: sleepLong,   other: sleepShort,  label: '睡眠7時間以上の日は', metric: 'mental',        metricLabel: 'メンタルが安定する' },
+      ].forEach(function(pattern) {
+        if (pattern.group.length < 5 || pattern.other.length < 5) return;
+        var avg1 = average(pattern.group.map(function(r) { return r.scores[pattern.metric]; }));
+        var avg2 = average(pattern.other.map(function(r) { return r.scores[pattern.metric]; }));
+        if (avg1 === null || avg2 === null) return;
+        var diff = avg1 - avg2;
+        if (diff < 0.5) return;
+        results.push({ label: pattern.label, metricLabel: pattern.metricLabel, diff: diff, count: pattern.group.length });
+      });
+
+      // --- 外出 ---
+      var wentOut   = validRecords.filter(function(r) { return r.evening.outing === 'した'; });
+      var stayedIn  = validRecords.filter(function(r) { return r.evening.outing === 'しなかった'; });
+
+      [
+        { group: wentOut,  other: stayedIn, label: '外出した日は', metric: 'mental',        metricLabel: 'メンタルが安定する' },
+        { group: wentOut,  other: stayedIn, label: '外出した日は', metric: 'eveningEnergy', metricLabel: '活力が高い' },
+        { group: stayedIn, other: wentOut,  label: '外出しなかった日は', metric: 'mental',  metricLabel: 'メンタルが低下しやすい' },
+      ].forEach(function(pattern) {
+        if (pattern.group.length < 5 || pattern.other.length < 5) return;
+        var avg1 = average(pattern.group.map(function(r) { return r.scores[pattern.metric]; }));
+        var avg2 = average(pattern.other.map(function(r) { return r.scores[pattern.metric]; }));
+        if (avg1 === null || avg2 === null) return;
+        var diff = avg1 - avg2;
+        if (diff < 0.5) return;
+        results.push({ label: pattern.label, metricLabel: pattern.metricLabel, diff: diff, count: pattern.group.length });
+      });
+
+      // --- 交流 ---
+      var hadSocial = validRecords.filter(function(r) { return r.evening.socializing === 'あった'; });
+      var noSocial  = validRecords.filter(function(r) { return r.evening.socializing === 'なかった'; });
+
+      [
+        { group: hadSocial, other: noSocial, label: '交流があった日は', metric: 'mental',        metricLabel: 'メンタルが安定する' },
+        { group: hadSocial, other: noSocial, label: '交流があった日は', metric: 'eveningEnergy', metricLabel: '活力が高い' },
+      ].forEach(function(pattern) {
+        if (pattern.group.length < 5 || pattern.other.length < 5) return;
+        var avg1 = average(pattern.group.map(function(r) { return r.scores[pattern.metric]; }));
+        var avg2 = average(pattern.other.map(function(r) { return r.scores[pattern.metric]; }));
+        if (avg1 === null || avg2 === null) return;
+        var diff = avg1 - avg2;
+        if (diff < 0.5) return;
+        results.push({ label: pattern.label, metricLabel: pattern.metricLabel, diff: diff, count: pattern.group.length });
+      });
+
+      // --- 作業時間 ---
+      var work1to3 = validRecords.filter(function(r) { return r.evening.workHours > 0 && r.evening.workHours <= 3; });
+      var work4to6 = validRecords.filter(function(r) { return r.evening.workHours > 3 && r.evening.workHours <= 6; });
+      var work0    = validRecords.filter(function(r) { return r.evening.workHours === 0; });
+
+      [
+        { group: work4to6, other: work0, label: '作業時間4〜6時間の日は', metric: 'eveningEnergy', metricLabel: '活力が高い' },
+        { group: work4to6, other: work0, label: '作業時間4〜6時間の日は', metric: 'mental',        metricLabel: 'メンタルが安定する' },
+        { group: work0,    other: work4to6, label: '作業しなかった日は',   metric: 'eveningEnergy', metricLabel: '活力が低い' },
+      ].forEach(function(pattern) {
+        if (pattern.group.length < 5 || pattern.other.length < 5) return;
+        var avg1 = average(pattern.group.map(function(r) { return r.scores[pattern.metric]; }));
+        var avg2 = average(pattern.other.map(function(r) { return r.scores[pattern.metric]; }));
+        if (avg1 === null || avg2 === null) return;
+        var diff = avg1 - avg2;
+        if (diff < 0.5) return;
+        results.push({ label: pattern.label, metricLabel: pattern.metricLabel, diff: diff, count: pattern.group.length });
+      });
+
+      // 差分が大きい順に並べてtopN件返す
+      results.sort(function(a, b) { return b.diff - a.diff; });
+      return results.slice(0, topN);
+    }
+
+    // パターンをHTMLで表示する
+    function renderPatterns(patterns) {
+      if (patterns.length === 0) {
+        return '<p class="text-muted small">まだパターンが見つかりません（データが増えると表示されます）</p>';
       }
 
       var html = '';
-
-      // 朝の記録があれば表示
-      if (morningRecord) {
-        html += `
-          <div class="mb-3">
-            <div class="d-flex align-items-center mb-2">
-              <span class="badge bg-warning text-dark me-2">朝</span>
-              <span class="text-muted small">${morningRecord.time}</span>
-            </div>
-            <div class="mb-1">
-              <span class="text-muted small">体調：</span>${arrayToText(morningRecord.body)}
-            </div>
-            <div class="mb-1">
-              <span class="text-muted small">メンタル：</span>${arrayToText(morningRecord.mental)}
-            </div>
-            <div class="mb-1">
-              <span class="text-muted small">活力：</span>${valueToText(morningRecord.vitality)}
-            </div>
-            <div>
-              <span class="text-muted small">睡眠：</span>${valueToText(morningRecord.sleepHours)}時間 ／ 満足度 ${valueToText(morningRecord.sleepQuality)}
-            </div>
-          </div>
-        `;
-      } else {
-        html += '<p class="text-muted small">朝の記録なし</p>';
-      }
-
-      // 夜の記録があれば表示
-      if (eveningRecord) {
-        html += `
-          <hr>
-          <div class="mb-3">
-            <div class="d-flex align-items-center mb-2">
-              <span class="badge bg-primary me-2">夜</span>
-              <span class="text-muted small">${eveningRecord.time}</span>
-            </div>
-            <div class="mb-1">
-              <span class="text-muted small">体調：</span>${arrayToText(eveningRecord.body)}
-            </div>
-            <div class="mb-1">
-              <span class="text-muted small">メンタル：</span>${arrayToText(eveningRecord.mental)}
-            </div>
-            <div class="mb-1">
-              <span class="text-muted small">活力：</span>${valueToText(eveningRecord.vitality)}
-            </div>
-            <div class="mb-1">
-              <span class="text-muted small">作業：</span>${valueToText(eveningRecord.workHours)}時間 ／ 外出：${valueToText(eveningRecord.outing)} ／ 交流：${valueToText(eveningRecord.socializing)}
-            </div>
-            <div class="mb-1">
-              <span class="text-muted small">できたこと：</span>${arrayToText(eveningRecord.done)}
-            </div>
-            <div class="mb-1">
-              <span class="text-muted small">大変だったこと：</span>${arrayToText(eveningRecord.hard)}
-            </div>
-            ${eveningRecord.memo ? `<div><span class="text-muted small">メモ：</span>${eveningRecord.memo}</div>` : ''}
-          </div>
-        `;
-      } else {
-        html += '<p class="text-muted small mt-2">夜の記録なし</p>';
-      }
-
-      container.innerHTML = html;
-    }
-
-    // ============================
-    // 朝→夜の変化を表示する
-    // ============================
-
-    function showMorningEveningChange(records) {
-      var today = getTodayString();
-      var container = document.getElementById('morning-evening-change');
-
-      // 今日の朝・夜の記録を探す
-      var morningRecord = null;
-      var eveningRecord = null;
-
-      records.forEach(function(r) {
-        if (r.date === today && r.type === 'morning') {
-          morningRecord = r;
-        }
-        if (r.date === today && r.type === 'evening') {
-          eveningRecord = r;
-        }
+      patterns.forEach(function(p, i) {
+        var trendLabel      = getTrendLabel(p.diff);
+        var confidenceLabel = getConfidenceLabel(p.count);
+        html += '<div class="mb-2">';
+        html += '<div>① '.replace('①', '①②③④⑤'.charAt(i));
+        html += p.label + p.metricLabel + '傾向があります</div>';
+        html += '<div class="text-muted small">';
+        if (trendLabel)      html += trendLabel + '　';
+        if (confidenceLabel) html += confidenceLabel + '（' + p.count + '件）';
+        html += '</div>';
+        html += '</div>';
       });
-
-      // 両方ない場合
-      if (!morningRecord && !eveningRecord) {
-        container.innerHTML = '<p class="text-muted">今日の朝・夜の記録が揃うと変化を確認できます</p>';
-        return;
-      }
-
-      // どちらか一方しかない場合
-      if (!morningRecord || !eveningRecord) {
-        container.innerHTML = '<p class="text-muted">朝と夜の両方を記録すると変化を確認できます</p>';
-        return;
-      }
-
-      // 体調・メンタル・活力を朝→夜で並べて表示
-      var html = `
-        <table class="table table-sm">
-          <thead>
-            <tr>
-              <th class="text-muted fw-normal" style="width: 30%"></th>
-              <th><span class="badge bg-warning text-dark">朝</span></th>
-              <th><span class="badge bg-primary">夜</span></th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td class="text-muted small">体調</td>
-              <td>${arrayToText(morningRecord.body)}</td>
-              <td>${arrayToText(eveningRecord.body)}</td>
-            </tr>
-            <tr>
-              <td class="text-muted small">メンタル</td>
-              <td>${arrayToText(morningRecord.mental)}</td>
-              <td>${arrayToText(eveningRecord.mental)}</td>
-            </tr>
-            <tr>
-              <td class="text-muted small">活力</td>
-              <td>${valueToText(morningRecord.vitality)}</td>
-              <td>${valueToText(eveningRecord.vitality)}</td>
-            </tr>
-          </tbody>
-        </table>
-      `;
-
-      container.innerHTML = html;
+      return html;
     }
 
     // ============================
-    // 7日間の傾向を表示する
+    // 最近のパターン
+    // ============================
+
+    function showRecentPatterns(records) {
+      var container   = document.getElementById('recent-patterns');
+      var validAll    = getValidRecords(records);
+      var recent30    = getRecentRecords(validAll, 30);
+      var patterns    = findPatterns(recent30, 3);
+      container.innerHTML = renderPatterns(patterns);
+    }
+
+    // ============================
+    // 自分の傾向
+    // ============================
+
+    function showAllPatterns(records) {
+      var container = document.getElementById('all-patterns');
+      var validAll  = getValidRecords(records);
+      var patterns  = findPatterns(validAll, 5);
+      container.innerHTML = renderPatterns(patterns);
+    }
+
+    // ============================
+    // 7日間の傾向
     // ============================
 
     function showWeeklyTrend(records) {
       var container = document.getElementById('weekly-trend');
-      var last7days = getLastNDays(7);
+      var validAll  = getValidRecords(records);
+      var today     = getTodayString();
 
-      // 日付ごとに朝・夜の記録を整理する
-      var dayMap = {};
-      last7days.forEach(function(d) {
-        dayMap[d] = { morning: null, evening: null };
+      // 今週（直近7日）と先週（8〜14日前）に分ける
+      var thisWeek = getRecentRecords(validAll, 7);
+      var lastWeekFrom = getDaysAgo(today, 14);
+      var lastWeekTo   = getDaysAgo(today, 8);
+      var lastWeek = validAll.filter(function(r) {
+        return r.date >= lastWeekFrom && r.date <= lastWeekTo;
       });
 
-      records.forEach(function(r) {
-        if (dayMap[r.date] !== undefined) {
-          if (r.type === 'morning') {
-            dayMap[r.date].morning = r;
-          }
-          if (r.type === 'evening') {
-            dayMap[r.date].evening = r;
-          }
-        }
-      });
-
-      // 7日分のどの日にも記録がない場合
-      var hasAnyRecord = last7days.some(function(d) {
-        return dayMap[d].morning !== null || dayMap[d].evening !== null;
-      });
-
-      if (!hasAnyRecord) {
-        container.innerHTML = '<p class="text-muted">7日分の記録が貯まると傾向を確認できます</p>';
+      if (thisWeek.length === 0) {
+        container.innerHTML = '<p class="text-muted">直近7日の記録がありません</p>';
         return;
       }
 
-      // 日付ごとに表示する（新しい順）
       var html = '';
-      last7days.forEach(function(d) {
-        var morning = dayMap[d].morning;
-        var evening = dayMap[d].evening;
 
-        // 記録がない日はスキップ
-        if (!morning && !evening) {
-          return;
-        }
+      // 外出日数の比較
+      var thisWeekOuting = thisWeek.filter(function(r) { return r.evening.outing === 'した'; }).length;
+      var lastWeekOuting = lastWeek.filter(function(r) { return r.evening.outing === 'した'; }).length;
+      html += '<div class="mb-2">';
+      html += '<div class="small text-muted">外出日数</div>';
+      if (lastWeek.length > 0) {
+        html += '<div>' + lastWeekOuting + '日 → ' + thisWeekOuting + '日</div>';
+      } else {
+        html += '<div>' + thisWeekOuting + '日</div>';
+      }
+      html += '</div>';
 
-        html += `
-          <div class="border-bottom pb-2 mb-2">
-            <div class="fw-bold small mb-1">${d}</div>
-            <div class="d-flex gap-3">
-        `;
+      // 作業時間の比較
+      var thisWeekWork = average(thisWeek.map(function(r) { return r.evening.workHours || 0; }));
+      var lastWeekWork = average(lastWeek.map(function(r) { return r.evening.workHours || 0; }));
+      html += '<div class="mb-2">';
+      html += '<div class="small text-muted">作業時間（平均）</div>';
+      if (lastWeek.length > 0 && lastWeekWork !== null) {
+        html += '<div>' + lastWeekWork.toFixed(1) + '時間 → ' + thisWeekWork.toFixed(1) + '時間</div>';
+      } else {
+        html += '<div>' + thisWeekWork.toFixed(1) + '時間</div>';
+      }
+      html += '</div>';
 
-        // 朝の概要
-        if (morning) {
-          html += `
-            <div>
-              <span class="badge bg-warning text-dark me-1">朝</span>
-              <span class="small">${morning.vitality || '活力未記入'}</span>
-            </div>
-          `;
-        }
-
-        // 夜の概要
-        if (evening) {
-          html += `
-            <div>
-              <span class="badge bg-primary me-1">夜</span>
-              <span class="small">${evening.vitality || '活力未記入'}</span>
-            </div>
-          `;
-        }
-
-        html += `
-            </div>
-          </div>
-        `;
-      });
+      // 活力の比較
+      var thisWeekEnergy = average(thisWeek.map(function(r) { return r.scores.eveningEnergy; }));
+      var lastWeekEnergy = average(lastWeek.map(function(r) { return r.scores.eveningEnergy; }));
+      html += '<div class="mb-2">';
+      html += '<div class="small text-muted">活力スコア（平均）</div>';
+      if (lastWeek.length > 0 && lastWeekEnergy !== null) {
+        var energyDiff = thisWeekEnergy - lastWeekEnergy;
+        var energyLabel = energyDiff > 0.3 ? '上昇' : energyDiff < -0.3 ? '低下' : 'ほぼ変化なし';
+        html += '<div>' + lastWeekEnergy.toFixed(1) + ' → ' + thisWeekEnergy.toFixed(1) + '　(' + energyLabel + ')</div>';
+      } else {
+        html += '<div>' + (thisWeekEnergy !== null ? thisWeekEnergy.toFixed(1) : '-') + '</div>';
+      }
+      html += '</div>';
 
       container.innerHTML = html;
     }
 
     // ============================
-    // ページ読み込み時に分析を実行する
+    // 実行
     // ============================
 
     var records = loadRecords();
 
-    showTodaySummary(records);
-    showMorningEveningChange(records);
+    showRecentPatterns(records);
     showWeeklyTrend(records);
+    showAllPatterns(records);
 
-    // ============================
-    // 傾向分析の共通ヘルパー
-    // ============================
+    var validRecords = getValidRecords(records);
+    showDetailSleep(validRecords);
+    showDetailOuting(validRecords);
+    showDetailSocial(validRecords);
+    showDetailWork(validRecords);
 
-    // 活力サインを数値に変換する（比較のため）
-    function vitalityToScore(vitality) {
-      if (vitality === 'やる気十分')      return 3;
-      if (vitality === '普通')            return 2;
-      if (vitality === '取りかかりが重い') return 1;
-      if (vitality === '何もしたくない')   return 0;
-      return null;
-    }
-
-    // 活力スコアの平均を計算する
-    function averageVitality(eveningRecords) {
-      var scores = eveningRecords
-        .map(function(r) { return vitalityToScore(r.vitality); })
-        .filter(function(s) { return s !== null; });
-
-      if (scores.length === 0) return null;
-
-      var sum = scores.reduce(function(a, b) { return a + b; }, 0);
-      return (sum / scores.length).toFixed(1);
-    }
-
-    // 活力スコアを日本語に変換する
-    function scoreToText(score) {
-      if (score === null) return '記録なし';
-      if (score >= 2.5)  return 'やる気十分';
-      if (score >= 1.5)  return '普通';
-      if (score >= 0.5)  return '取りかかりが重い';
-      return '何もしたくない';
-    }
-
-    // データが少ない場合のメッセージを返す
-    function notEnoughData(container) {
-      container.innerHTML = '<p class="text-muted">データが少ないため傾向が出ません（3件以上記録すると表示されます）</p>';
-    }
-
-    // 比較結果をHTMLで表示する
-    function showComparison(container, rows) {
-      var html = '<table class="table table-sm">';
-      html += '<thead><tr><th class="text-muted fw-normal">条件</th><th class="text-muted fw-normal">件数</th><th class="text-muted fw-normal">平均活力</th></tr></thead>';
-      html += '<tbody>';
-      rows.forEach(function(row) {
-        html += '<tr>';
-        html += '<td>' + row.label + '</td>';
-        html += '<td class="text-muted">' + row.count + '件</td>';
-        html += '<td>' + scoreToText(row.avg) + ' <span class="text-muted small">(' + (row.avg !== null ? row.avg : '-') + ')</span></td>';
-        html += '</tr>';
-      });
-      html += '</tbody></table>';
-      container.innerHTML = html;
-    }
-
-    // ============================
-    // 睡眠と状態の関係
-    // ============================
-
-    function showTrendSleep(records) {
-      var container = document.getElementById('trend-sleep');
-
-      // 朝の記録（睡眠時間あり）と同日の夜の記録を紐づける
-      var pairs = [];
-      records.forEach(function(r) {
-        if (r.type === 'morning' && r.sleepHours !== '') {
-          var evening = records.find(function(e) {
-            return e.type === 'evening' && e.date === r.date;
-          });
-          if (evening) {
-            pairs.push({
-              sleepHours: parseFloat(r.sleepHours),
-              evening: evening
-            });
-          }
-        }
-      });
-
-      if (pairs.length < 3) {
-        notEnoughData(container);
-        return;
-      }
-
-      // 睡眠時間で3グループに分ける
-      var short  = pairs.filter(function(p) { return p.sleepHours < 6; });
-      var middle = pairs.filter(function(p) { return p.sleepHours >= 6 && p.sleepHours < 8; });
-      var long   = pairs.filter(function(p) { return p.sleepHours >= 8; });
-
-      showComparison(container, [
-        { label: '6時間未満',   count: short.length,  avg: averageVitality(short.map(function(p)  { return p.evening; })) },
-        { label: '6〜8時間',    count: middle.length, avg: averageVitality(middle.map(function(p) { return p.evening; })) },
-        { label: '8時間以上',   count: long.length,   avg: averageVitality(long.map(function(p)   { return p.evening; })) }
-      ]);
-    }
-
-    // ============================
-    // 外出と状態の関係
-    // ============================
-
-    function showTrendOuting(records) {
-      var container = document.getElementById('trend-outing');
-
-      var eveningRecords = records.filter(function(r) {
-        return r.type === 'evening' && r.outing !== null;
-      });
-
-      if (eveningRecords.length < 3) {
-        notEnoughData(container);
-        return;
-      }
-
-      var went    = eveningRecords.filter(function(r) { return r.outing === 'した'; });
-      var stayed  = eveningRecords.filter(function(r) { return r.outing === 'しなかった'; });
-
-      showComparison(container, [
-        { label: '外出した',      count: went.length,   avg: averageVitality(went) },
-        { label: '外出しなかった', count: stayed.length, avg: averageVitality(stayed) }
-      ]);
-    }
-
-    // ============================
-    // 人との交流と状態の関係
-    // ============================
-
-    function showTrendSocial(records) {
-      var container = document.getElementById('trend-social');
-
-      var eveningRecords = records.filter(function(r) {
-        return r.type === 'evening' && r.socializing !== null;
-      });
-
-      if (eveningRecords.length < 3) {
-        notEnoughData(container);
-        return;
-      }
-
-      var hadSocial  = eveningRecords.filter(function(r) { return r.socializing === 'あった'; });
-      var noSocial   = eveningRecords.filter(function(r) { return r.socializing === 'なかった'; });
-
-      showComparison(container, [
-        { label: '交流あった',   count: hadSocial.length, avg: averageVitality(hadSocial) },
-        { label: '交流なかった', count: noSocial.length,  avg: averageVitality(noSocial) }
-      ]);
-    }
-
-    // ============================
-    // 作業時間と状態の関係
-    // ============================
-
-    function showTrendWork(records) {
-      var container = document.getElementById('trend-work');
-
-      var eveningRecords = records.filter(function(r) {
-        return r.type === 'evening' && r.workHours !== '';
-      });
-
-      if (eveningRecords.length < 3) {
-        notEnoughData(container);
-        return;
-      }
-
-      // 作業時間で3グループに分ける
-      var short  = eveningRecords.filter(function(r) { return parseFloat(r.workHours) < 2; });
-      var middle = eveningRecords.filter(function(r) { return parseFloat(r.workHours) >= 2 && parseFloat(r.workHours) < 6; });
-      var long   = eveningRecords.filter(function(r) { return parseFloat(r.workHours) >= 6; });
-
-      showComparison(container, [
-        { label: '2時間未満', count: short.length,  avg: averageVitality(short) },
-        { label: '2〜6時間',  count: middle.length, avg: averageVitality(middle) },
-        { label: '6時間以上', count: long.length,   avg: averageVitality(long) }
-      ]);
-    }
-
-    // ============================
-    // 傾向分析を実行する
-    // ============================
-
-    showTrendSleep(records);
-    showTrendOuting(records);
-    showTrendSocial(records);
-    showTrendWork(records);
-
-    // ============================
-    // Gemini APIを呼び出す関数
-    // ============================
-
-    function callGeminiAPI(apiKey, prompt) {
-      var url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + apiKey;
-
-      return fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text: prompt
-            }]
-          }]
-        })
-      })
-      .then(function(response) {
-        return response.json();
-      })
-      .then(function(data) {
-        // レスポンスからテキストを取り出す
-        return data.candidates[0].content.parts[0].text;
-      });
-    }
-
-    // ============================
-    // 記録データをプロンプト用テキストに変換する
-    // ============================
-
-    function buildPrompt(records) {
-
-      // 過去14日分の記録を使う
-      var last14days = getLastNDays(14);
-      var recentRecords = records.filter(function(r) {
-        return last14days.indexOf(r.date) !== -1;
-      });
-
-      // 記録をテキストに変換する
-      var recordText = '';
-      recentRecords.forEach(function(r) {
-        if (r.type === 'morning') {
-          recordText += '\n【' + r.date + ' 朝】';
-          recordText += '\n体調：' + (r.body.length > 0 ? r.body.join('、') : 'なし');
-          recordText += '\nメンタル：' + (r.mental.length > 0 ? r.mental.join('、') : 'なし');
-          recordText += '\n活力：' + (r.vitality || '未記入');
-          recordText += '\n睡眠：' + (r.sleepHours || '未記入') + '時間・満足度' + (r.sleepQuality || '未記入');
-          recordText += '\n天気：' + (r.weather || '未記入') + '・' + (r.temperature !== null ? r.temperature + '℃' : '未記入');
-          recordText += '\n気圧：' + (r.pressure !== null && r.pressure !== undefined ? r.pressure + 'hPa' : '未記入');
-        }
-        if (r.type === 'evening') {
-          recordText += '\n【' + r.date + ' 夜】';
-          recordText += '\n体調：' + (r.body.length > 0 ? r.body.join('、') : 'なし');
-          recordText += '\nメンタル：' + (r.mental.length > 0 ? r.mental.join('、') : 'なし');
-          recordText += '\n活力：' + (r.vitality || '未記入');
-          recordText += '\n作業：' + (r.workHours || '未記入') + '時間';
-          recordText += '\n外出：' + (r.outing || '未記入');
-          recordText += '\n交流：' + (r.socializing || '未記入');
-          recordText += '\nできたこと：' + (r.done.length > 0 ? r.done.join('、') : 'なし');
-          recordText += '\n大変だったこと：' + (r.hard.length > 0 ? r.hard.join('、') : 'なし');
-          recordText += '\nメモ：' + (r.memo || 'なし');
-        }
-        recordText += '\n';
-      });
-
-      // プロンプトを組み立てる
-      var prompt = `以下は私の過去14日間の体調・メンタル・行動の記録です。
-
-${recordText}
-
-以下の3点について、やさしい日本語で分析してください。
-
-1. 【今日のまとめ】今日の記録から気づいたこと
-2. 【7日間の傾向】最近の傾向や変化
-3. 【パターン発見】調子が良くなる条件・悪くなる条件
-
-※データが少ない場合はその旨を伝えてください。
-※断定せず「〜の傾向があります」「〜かもしれません」のような表現にしてください。`;
-
-      return prompt;
-    }
-
-    // ============================
-    // AI分析ボタンの処理
-    // ============================
-
-    document.getElementById('ai-analyze-btn').addEventListener('click', function() {
-
-      // APIキーの確認
-      var apiKey = document.getElementById('api-key').value.trim();
-      if (!apiKey) {
-        alert('APIキーを入力してください');
-        return;
-      }
-
-      // ボタンを無効化
-      var btn = document.getElementById('ai-analyze-btn');
-      btn.disabled = true;
-      btn.textContent = '分析中...';
-
-      // 結果エリアを表示
-      var resultDiv = document.getElementById('ai-result');
-      resultDiv.style.display = 'block';
-      resultDiv.innerHTML = '<p class="text-muted">AIが分析しています。少々お待ちください...</p>';
-
-      // プロンプトを作成してAPIを呼び出す
-      var prompt = buildPrompt(records);
-
-      callGeminiAPI(apiKey, prompt)
-        .then(function(resultText) {
-          // 改行を<br>に変換して表示する
-          var html = resultText.replace(/\n/g, '<br>');
-          resultDiv.innerHTML = '<div class="border-top pt-3">' + html + '</div>';
-        })
-        .catch(function(error) {
-          console.log('AI分析エラー:', error);
-          resultDiv.innerHTML = '<div class="alert alert-danger">分析に失敗しました。APIキーを確認してください。</div>';
-        })
-        .finally(function() {
-          btn.disabled = false;
-          btn.textContent = 'AIに分析してもらう';
-        });
-    });
   </script>
 
 </body>

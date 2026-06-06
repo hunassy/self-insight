@@ -283,7 +283,6 @@
       var container = document.getElementById('record-detail');
 
       if (!record) {
-
         container.innerHTML = `
           <div class="card">
             <div class="card-body">
@@ -292,128 +291,199 @@
             </div>
           </div>
         `;
-
         return;
       }
+
+      // 今日のまとめ用：体調変化を計算する
+      function getPhysicalChange(record) {
+        if (!record.morning || !record.evening) return '比較不可';
+        var GOOD = ['問題なし', '身体が軽い'];
+        var BAD  = ['眠い', 'だるい', '強い疲労感', '目の疲れ', '頭痛', '肩こり・首こり', '食欲不振', '過食'];
+        var morningScore = 0;
+        var eveningScore = 0;
+        (record.morning.body || []).forEach(function(s) {
+          if (GOOD.indexOf(s) !== -1) morningScore += 1;
+          if (BAD.indexOf(s)  !== -1) morningScore -= 1;
+        });
+        (record.evening.body || []).forEach(function(s) {
+          if (GOOD.indexOf(s) !== -1) eveningScore += 1;
+          if (BAD.indexOf(s)  !== -1) eveningScore -= 1;
+        });
+        if (eveningScore > morningScore) return '改善傾向';
+        if (eveningScore < morningScore) return '悪化傾向';
+        return '変化なし';
+      }
+
+      // 今日のまとめ用：メンタル変化を計算する
+      function getMentalChange(record) {
+        if (!record.morning || !record.evening) return '比較不可';
+        var GOOD = ['穏やか', '前向き'];
+        var BAD  = ['不安', '焦り', '落ち込み', '憂鬱', '無気力', 'イライラ', '緊張', '集中しにくい', '考えがまとまらない'];
+        var morningScore = 0;
+        var eveningScore = 0;
+        (record.morning.mental || []).forEach(function(s) {
+          if (GOOD.indexOf(s) !== -1) morningScore += 1;
+          if (BAD.indexOf(s)  !== -1) morningScore -= 1;
+        });
+        (record.evening.mental || []).forEach(function(s) {
+          if (GOOD.indexOf(s) !== -1) eveningScore += 1;
+          if (BAD.indexOf(s)  !== -1) eveningScore -= 1;
+        });
+        if (eveningScore > morningScore) return '改善傾向';
+        if (eveningScore < morningScore) return '悪化傾向';
+        return '変化なし';
+      }
+
+      // 朝・夜のサインを2列で表示するHTML
+      function twoColumnList(morningArr, eveningArr) {
+        var maxLen = Math.max((morningArr || []).length, (eveningArr || []).length);
+        if (maxLen === 0) return '<div class="text-muted">なし</div>';
+        var html = '';
+        for (var i = 0; i < maxLen; i++) {
+          var m = morningArr && morningArr[i] ? '・' + morningArr[i] : '';
+          var e = eveningArr && eveningArr[i] ? '・' + eveningArr[i] : '';
+          html += `
+            <div class="row">
+              <div class="col-6">${m}</div>
+              <div class="col-6">${e}</div>
+            </div>
+          `;
+        }
+        return html;
+      }
+
+      // 今日のまとめHTML（朝の記録がない場合は表示しない）
+      var summaryHtml = '';
+      if (record.morning && record.evening) {
+        summaryHtml = `
+          <div class="mb-3">
+            <h5 class="fw-bold mb-3">今日のまとめ</h5>
+
+            <div class="mb-3">
+              <div class="fw-bold mb-1">＜状態＞</div>
+
+              <div class="mb-2">
+                <div class="fw-bold small mb-1">体調</div>
+                <div class="row text-muted small mb-1">
+                  <div class="col-6">朝</div>
+                  <div class="col-6">夜</div>
+                </div>
+                ${twoColumnList(record.morning.body, record.evening.body)}
+                <div class="small mt-1">変化：${getPhysicalChange(record)}</div>
+              </div>
+
+              <div class="mb-2">
+                <div class="fw-bold small mb-1">メンタル</div>
+                <div class="row text-muted small mb-1">
+                  <div class="col-6">朝</div>
+                  <div class="col-6">夜</div>
+                </div>
+                ${twoColumnList(record.morning.mental, record.evening.mental)}
+                <div class="small mt-1">変化：${getMentalChange(record)}</div>
+              </div>
+
+              <div class="mb-2">
+                <div class="fw-bold small mb-1">活力</div>
+                <div class="row text-muted small mb-1">
+                  <div class="col-6">朝</div>
+                  <div class="col-6">夜</div>
+                </div>
+                <div class="row">
+                  <div class="col-6">・${record.morning.vitality || '-'}</div>
+                  <div class="col-6">・${record.evening.vitality || '-'}</div>
+                </div>
+                <div class="small mt-1">変化：${getVitalityChange(record)}</div>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <div class="fw-bold mb-1">＜行動＞</div>
+              <div>作業時間：${record.evening.workHours || 0}時間</div>
+              <div>外出：${record.evening.outing || '-'}</div>
+              <div>交流：${record.evening.socializing || '-'}</div>
+            </div>
+
+            <div>
+              <div class="fw-bold mb-1">出来事</div>
+              <div>できたこと：${(record.evening.done || []).length}件
+                ${(record.evening.done || []).length > 0
+                  ? '<div class="text-muted small">' + record.evening.done.map(function(d) { return '・' + d; }).join('<br>') + '</div>'
+                  : ''}
+              </div>
+              <div class="mt-1">大変だったこと：${(record.evening.hard || []).length}件
+                ${(record.evening.hard || []).length > 0
+                  ? '<div class="text-muted small">' + record.evening.hard.map(function(d) { return '・' + d; }).join('<br>') + '</div>'
+                  : ''}
+              </div>
+            </div>
+          </div>
+          <hr>
+        `;
+      }
+
+      // 朝の記録HTML（クリックで展開）
+      var morningHtml = `
+        <div class="mb-3">
+          <div class="fw-bold mb-2" style="cursor:pointer;"
+            onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
+            ▶ 朝の記録
+          </div>
+          <div style="display:none;">
+            ${record.morning ? `
+              <div class="mb-1 small">体調</div>
+              ${listToHtml(record.morning.body)}
+              <div class="mb-1 small mt-2">メンタル</div>
+              ${listToHtml(record.morning.mental)}
+              <div class="mb-1 small mt-2">活力</div>
+              <div>${record.morning.vitality || '-'}</div>
+              <div class="mb-1 small mt-2">睡眠</div>
+              <div>${record.morning.sleepHours || '-'}時間　満足度 ${record.morning.sleepQuality || '-'}</div>
+            ` : '<div class="text-muted">未記録</div>'}
+          </div>
+        </div>
+      `;
+
+      // 夜の記録HTML（クリックで展開）
+      var eveningHtml = `
+        <div class="mb-3">
+          <div class="fw-bold mb-2" style="cursor:pointer;"
+            onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
+            ▶ 夜の記録
+          </div>
+          <div style="display:none;">
+            ${record.evening ? `
+              <div class="mb-1 small">体調</div>
+              ${listToHtml(record.evening.body)}
+              <div class="mb-1 small mt-2">メンタル</div>
+              ${listToHtml(record.evening.mental)}
+              <div class="mb-1 small mt-2">活力</div>
+              <div>${record.evening.vitality || '-'}</div>
+              <div class="mb-1 small mt-2">行動</div>
+              <div>作業時間：${record.evening.workHours || 0}時間</div>
+              <div>外出：${record.evening.outing || '-'}</div>
+              <div>交流：${record.evening.socializing || '-'}</div>
+              <div class="mb-1 small mt-2">できたこと</div>
+              ${listToHtml(record.evening.done)}
+              <div class="mb-1 small mt-2">大変だったこと</div>
+              ${listToHtml(record.evening.hard)}
+              ${record.evening.memo ? `<div class="mb-1 small mt-2">メモ</div><div>${record.evening.memo}</div>` : ''}
+            ` : '<div class="text-muted">未記録</div>'}
+          </div>
+        </div>
+      `;
 
       container.innerHTML = `
         <div class="card">
           <div class="card-body">
-
             <h5 class="mb-3">${dateString}</h5>
-
-            <h6>朝</h6>
-            ${
-              record.morning
-              ? `
-                <h6 class="mt-3">体調</h6>
-                ${listToHtml(record.morning.body)}
-
-                <h6 class="mt-3">メンタル</h6>
-                ${listToHtml(record.morning.mental)}
-
-                <h6 class="mt-3">活力</h6>
-                <div>${record.morning.vitality || '-'}</div>
-
-                <h6 class="mt-3">睡眠</h6>
-                <div>${record.morning.sleepHours || '-'} 時間</div>
-                <div>満足度 ${record.morning.sleepQuality || '-'}</div>
-              `
-              : '<div class="text-muted">未記録</div>'
-            }
-
-            <hr>
-
-            <h6>夜</h6>
-            ${
-              record.evening
-              ? `
-                <h6 class="mt-3">体調</h6>
-                ${listToHtml(record.evening.body)}
-
-                <h6 class="mt-3">メンタル</h6>
-                ${listToHtml(record.evening.mental)}
-
-                <h6 class="mt-3">活力</h6>
-                <div>${record.evening.vitality || '-'}</div>
-
-                <h6 class="mt-3">行動</h6>
-                <div>作業時間：${record.evening.workHours || 0}時間</div>
-                <div>外出：${record.evening.outing || '-'}</div>
-                <div>交流：${record.evening.socializing || '-'}</div>
-
-                <h6 class="mt-3">できたこと</h6>
-                ${listToHtml(record.evening.done)}
-
-                <h6 class="mt-3">大変だったこと</h6>
-                ${listToHtml(record.evening.hard)}
-
-                ${
-                  record.evening.memo
-                  ? `
-                    <h6 class="mt-3">メモ</h6>
-                    <div>${record.evening.memo}</div>
-                  `
-                  : ''
-                }
-              `
-              : '<div class="text-muted">未記録</div>'
-            }
-
-            ${
-              summary
-              ? `
-                <hr>
-
-                <h5>今日のまとめ</h5>
-
-                <h6 class="mt-3">状態</h6>
-
-                <div>
-                  <h6>体調</h6>
-                  <div class="text-muted">朝</div>
-                  ${listToHtml(summary.body.morning)}
-
-                  <div class="text-muted mt-2">夜</div>
-                  ${listToHtml(summary.body.evening)}
-                </div>
-
-                <div>
-                  <h6>メンタル</h6>
-                  <div class="text-muted">朝</div>
-                  ${listToHtml(summary.mental.morning)}
-
-                  <div class="text-muted mt-2">夜</div>
-                  ${listToHtml(summary.mental.evening)}
-                </div>
-
-                <div>
-                  活力：
-                  ${summary.vitality || '未記録'}
-                </div>
-
-                <h6 class="mt-3">行動</h6>
-
-                <div>作業時間：${summary.workHours}時間</div>
-                <div>外出：${summary.outing}</div>
-                <div>交流：${summary.socializing}</div>
-
-                <h6 class="mt-3">出来事</h6>
-
-                <div>できたこと：${summary.doneCount}件</div>
-                <div>大変だったこと：${summary.hardCount}件</div>
-
-                <h6 class="mt-3">変化</h6>
-
-                <div>活力：${summary.vitalityChange}</div>
-              `
-              : ''
-            }
+            ${summaryHtml}
+            ${morningHtml}
+            ${eveningHtml}
           </div>
         </div>
       `;
     }
-
+    
     // ============================
     // ページ読み込み時に記録を表示する
     // ============================
@@ -421,6 +491,14 @@
     var records = loadRecords();
 
     renderCalendar(records);
+
+    // URLに日付が含まれている場合は自動的に詳細を表示する
+    // 例：records.html?date=2026-06-06
+    var urlParams = new URLSearchParams(window.location.search);
+    var dateFromUrl = urlParams.get('date');
+    if (dateFromUrl) {
+      showRecordDetail(dateFromUrl);
+    }
 
   </script>
 

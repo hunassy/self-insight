@@ -214,10 +214,73 @@
     }
 
     // ============================
-    // localStorage への保存・読み込み
+    // スコア計算の関数
     // ============================
 
+    // 朝の活力をスコアに変換する
+    function morningEnergyToScore(vitality) {
+      if (vitality === 'いつもより動けそう')      return 2;
+      if (vitality === 'いつも通りのことはできる') return 1;
+      if (vitality === '少し頑張れば動ける')       return -1;
+      if (vitality === '何もしたくない')           return -2;
+      return null;
+    }
+
+    // 夜の活力をスコアに変換する
+    function eveningEnergyToScore(vitality) {
+      if (vitality === '想定以上に動けた')     return 2;
+      if (vitality === '普段通りに動けた')     return 1;
+      if (vitality === '最低限は動けた')       return -1;
+      if (vitality === 'ほとんど動けなかった') return -2;
+      return null;
+    }
+
+    // メンタルサインをスコアに変換する（配列を受け取って合計を返す）
+    function mentalSignsToScore(signs) {
+      var GOOD  = ['穏やか', '前向き'];
+      var BAD   = ['不安', '焦り', '落ち込み', '憂鬱', '無気力', 'イライラ', '緊張', '集中しにくい', '考えがまとまらない'];
+      var score = 0;
+      signs.forEach(function(sign) {
+        if (GOOD.indexOf(sign) !== -1) score += 1;
+        if (BAD.indexOf(sign)  !== -1) score -= 1;
+      });
+      return score;
+    }
+
+    // 体調サインをスコアに変換する（配列を受け取って合計を返す）
+    function physicalSignsToScore(signs) {
+      var GOOD = ['問題なし', '身体が軽い'];
+      var BAD  = ['眠い', 'だるい', '強い疲労感', '目の疲れ', '頭痛', '肩こり・首こり', '食欲不振', '過食'];
+      var score = 0;
+      signs.forEach(function(sign) {
+        if (GOOD.indexOf(sign) !== -1) score += 1;
+        if (BAD.indexOf(sign)  !== -1) score -= 1;
+      });
+      return score;
+    }
+
+    // 朝・夜のデータからscoresを計算する
+    // 朝の記録がない場合はnullを返す
+    function calculateScores(morningData, eveningData) {
+
+      // 朝の記録がない場合は計算しない
+      if (!morningData) {
+        return null;
+      }
+
+      return {
+        physical:      physicalSignsToScore(morningData.body || []) + physicalSignsToScore(eveningData.body || []),
+        mental:        mentalSignsToScore(morningData.mental || []) + mentalSignsToScore(eveningData.mental || []),
+        morningEnergy: morningEnergyToScore(morningData.vitality),
+        eveningEnergy: eveningEnergyToScore(eveningData.vitality)
+      };
+    }
+
     var STORAGE_KEY = 'selfInsightRecords';
+
+    // ============================
+    // localStorage への保存・読み込み
+    // ============================
 
     function loadRecords() {
       var data = localStorage.getItem(STORAGE_KEY);
@@ -350,6 +413,7 @@
           console.log('天気取得スキップ:', error);
         })
         .finally(function() {
+          // 夜のデータを保存する
           saveRecord(
             record.date,
             'evening',
@@ -373,6 +437,20 @@
             }
           );
 
+          // scoresを計算して保存する（朝の記録がある場合のみ）
+          var allRecords = loadRecords();
+          var todayRecord = allRecords.find(function(r) {
+            return r.date === record.date;
+          });
+          var scores = calculateScores(
+            todayRecord ? todayRecord.morning : null,
+            record
+          );
+          if (scores !== null) {
+            todayRecord.scores = scores;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(allRecords));
+          }
+
           console.log('保存しました:', record);
 
           var messageDiv = document.getElementById('save-message');
@@ -382,9 +460,10 @@
           btn.disabled = false;
           btn.textContent = '夜の記録を保存する';
 
+          // 2秒後に記録一覧へ遷移する（今日の日付を渡す）
           setTimeout(function() {
-            messageDiv.style.display = 'none';
-          }, 3000);
+            window.location.href = 'records.html?date=' + record.date;
+          }, 2000);
         });
     });
   </script>
