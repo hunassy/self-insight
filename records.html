@@ -431,7 +431,7 @@
             </div>
 
             <div>
-              <div class="fw-bold mb-1">出来事</div>
+              <div class="fw-bold mb-1">＜出来事＞</div>
               <div>できたこと：${(record.evening.done || []).length}件
                 ${(record.evening.done || []).length > 0
                   ? '<div class="text-muted small">' + record.evening.done.map(function(d) { return '・' + d; }).join('<br>') + '</div>'
@@ -443,69 +443,30 @@
                   : ''}
               </div>
             </div>
+            ${record.summary && record.summary.text
+              ? `<div class="mt-3">
+                  <div class="fw-bold mb-1">AI総評</div>
+                  <div class="text-muted small">
+                    ${record.summary.text
+                      .split('\n')
+                      .map(function(part) {
+                        return part ? '<div>' + part + '</div>' : '';
+                      })
+                      .join('<div class="mt-2"></div>')
+                    }
+                  </div>
+                </div>`
+              : ''
+            }
           </div>
           <hr>
         `;
       }
-
-      // 朝の記録HTML（クリックで展開）
-      var morningHtml = `
-        <div class="mb-3">
-          <div class="fw-bold mb-2" style="cursor:pointer;"
-            onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
-            ▶ 朝の記録
-          </div>
-          <div style="display:none;">
-            ${record.morning ? `
-              <div class="mb-1 small">体調</div>
-              ${listToHtml(record.morning.body)}
-              <div class="mb-1 small mt-2">メンタル</div>
-              ${listToHtml(record.morning.mental)}
-              <div class="mb-1 small mt-2">活力</div>
-              <div>${record.morning.vitality || '-'}</div>
-              <div class="mb-1 small mt-2">睡眠</div>
-              <div>${record.morning.sleepHours || '-'}時間　満足度 ${record.morning.sleepQuality || '-'}</div>
-            ` : '<div class="text-muted">未記録</div>'}
-          </div>
-        </div>
-      `;
-
-      // 夜の記録HTML（クリックで展開）
-      var eveningHtml = `
-        <div class="mb-3">
-          <div class="fw-bold mb-2" style="cursor:pointer;"
-            onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
-            ▶ 夜の記録
-          </div>
-          <div style="display:none;">
-            ${record.evening ? `
-              <div class="mb-1 small">体調</div>
-              ${listToHtml(record.evening.body)}
-              <div class="mb-1 small mt-2">メンタル</div>
-              ${listToHtml(record.evening.mental)}
-              <div class="mb-1 small mt-2">活力</div>
-              <div>${record.evening.vitality || '-'}</div>
-              <div class="mb-1 small mt-2">行動</div>
-              <div>作業時間：${record.evening.workHours || 0}時間</div>
-              <div>外出：${record.evening.outing || '-'}</div>
-              <div>交流：${record.evening.socializing || '-'}</div>
-              <div class="mb-1 small mt-2">できたこと</div>
-              ${listToHtml(record.evening.done)}
-              <div class="mb-1 small mt-2">大変だったこと</div>
-              ${listToHtml(record.evening.hard)}
-              ${record.evening.memo ? `<div class="mb-1 small mt-2">メモ</div><div>${record.evening.memo}</div>` : ''}
-            ` : '<div class="text-muted">未記録</div>'}
-          </div>
-        </div>
-      `;
-
       container.innerHTML = `
         <div class="card">
           <div class="card-body">
             <h5 class="mb-3">${dateString}</h5>
             ${summaryHtml}
-            ${morningHtml}
-            ${eveningHtml}
           </div>
         </div>
       `;

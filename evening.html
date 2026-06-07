@@ -467,6 +467,205 @@
           btn.disabled = false;
           btn.textContent = '夜の記録を保存する';
 
+          // ============================
+          // AI総評を生成して保存する
+          // ============================
+
+          // 朝の記録があるときだけ実行する
+          if (todayRecord && todayRecord.morning) {
+
+            var morningData = todayRecord.morning;
+            var eveningData = record;
+
+            // --- 要因の変化をルールで計算する ---
+
+            var morningBody   = morningData.body   || [];
+            var eveningBody   = eveningData.body   || [];
+            var morningMental = morningData.mental || [];
+            var eveningMental = eveningData.mental || [];
+
+            // 消えた体調サイン（朝にあって夜にない）
+            var bodyGone = morningBody.filter(function(s) {
+              return eveningBody.indexOf(s) === -1;
+            });
+
+            // 新しく出た体調サイン（朝になくて夜にある）
+            var bodyNew = eveningBody.filter(function(s) {
+              return morningBody.indexOf(s) === -1;
+            });
+
+            // 継続している体調サイン（朝にも夜にもある）
+            var bodyContinued = morningBody.filter(function(s) {
+              return eveningBody.indexOf(s) !== -1;
+            });
+
+            // 消えたメンタルサイン
+            var mentalGone = morningMental.filter(function(s) {
+              return eveningMental.indexOf(s) === -1;
+            });
+
+            // 新しく出たメンタルサイン
+            var mentalNew = eveningMental.filter(function(s) {
+              return morningMental.indexOf(s) === -1;
+            });
+
+            // 継続しているメンタルサイン
+            var mentalContinued = morningMental.filter(function(s) {
+              return eveningMental.indexOf(s) !== -1;
+            });
+
+            // --- ルールベースでAI総評テキストを生成する ---
+
+            // 文章のパーツを入れる配列
+            var sentences = [];
+
+            // --- 1文目：朝の状態 ---
+            var morningSigns = [];
+            if (morningBody.length > 0)   morningSigns.push('体調は' + morningBody.join('・'));
+            if (morningMental.length > 0) morningSigns.push('メンタルは' + morningMental.join('・'));
+
+            if (morningSigns.length > 0) {
+              sentences.push('朝は' + morningSigns.join('、') + 'の状態でした。');
+            } else {
+              sentences.push('朝のサイン記録はありませんでした。');
+            }
+
+            // --- 2文目：夜との変化 ---
+            var changeParts = [];
+
+            // 消えたサイン
+            var allGone = bodyGone.concat(mentalGone);
+            if (allGone.length > 0) {
+              changeParts.push(allGone.join('・') + 'は夜には見られなくなりました');
+            }
+
+            // 新しく出たサイン
+            var allNew = bodyNew.concat(mentalNew);
+            if (allNew.length > 0) {
+              changeParts.push('夜には' + allNew.join('・') + 'が加わりました');
+            }
+
+            // 継続しているサイン
+            var allContinued = bodyContinued.concat(mentalContinued);
+            if (allContinued.length > 0 && allGone.length === 0 && allNew.length === 0) {
+              changeParts.push(allContinued.join('・') + 'が続いています');
+            }
+
+            if (changeParts.length > 0) {
+              sentences.push(changeParts.join('。') + '。');
+            } else if (eveningBody.length === 0 && eveningMental.length === 0) {
+              sentences.push('夜のサイン記録はありませんでした。');
+            } else {
+              sentences.push('朝から夜にかけて状態に大きな変化はありませんでした。');
+            }
+
+            // --- 3文目：今日できたこと ---
+            var doneList = eveningData.done || [];
+            if (doneList.length > 0) {
+              sentences.push(doneList.join('・') + 'が記録されています。');
+            }
+
+            // --- 4文目：前日との比較 ---
+
+            // 前日の日付を計算する
+            var todayDate = new Date(record.date);
+            todayDate.setDate(todayDate.getDate() - 1);
+            var yesterdayString =
+              todayDate.getFullYear() + '-' +
+              String(todayDate.getMonth() + 1).padStart(2, '0') + '-' +
+              String(todayDate.getDate()).padStart(2, '0');
+
+            // 前日のレコードを探す
+            var allRecords = loadRecords();
+            var yesterdayRecord = allRecords.find(function(r) {
+              return r.date === yesterdayString;
+            });
+
+            // 前日の夜のサインがある場合だけ比較する
+            if (yesterdayRecord && yesterdayRecord.evening) {
+
+              var yesterdayBody   = yesterdayRecord.evening.body   || [];
+              var yesterdayMental = yesterdayRecord.evening.mental || [];
+              var yesterdayHard   = yesterdayRecord.evening.hard   || [];
+
+              // 当日の夜のサイン
+              var todayBody   = eveningData.body   || [];
+              var todayMental = eveningData.mental || [];
+              var todayHard   = eveningData.hard   || [];
+
+              // 前日から消えたもの
+              var disappearedBody   = yesterdayBody.filter(function(s) {
+                return todayBody.indexOf(s) === -1;
+              });
+              var disappearedMental = yesterdayMental.filter(function(s) {
+                return todayMental.indexOf(s) === -1;
+              });
+              var disappearedHard   = yesterdayHard.filter(function(s) {
+                return todayHard.indexOf(s) === -1;
+              });
+
+              // 前日から新しく出たもの
+              var appearedBody   = todayBody.filter(function(s) {
+                return yesterdayBody.indexOf(s) === -1;
+              });
+              var appearedMental = todayMental.filter(function(s) {
+                return yesterdayMental.indexOf(s) === -1;
+              });
+              var appearedHard   = todayHard.filter(function(s) {
+                return yesterdayHard.indexOf(s) === -1;
+              });
+
+              // 前日から継続しているもの
+              var continuedBody   = todayBody.filter(function(s) {
+                return yesterdayBody.indexOf(s) !== -1;
+              });
+              var continuedMental = todayMental.filter(function(s) {
+                return yesterdayMental.indexOf(s) !== -1;
+              });
+              var continuedHard   = todayHard.filter(function(s) {
+                return yesterdayHard.indexOf(s) !== -1;
+              });
+
+              // 前日比較の文章を作る
+              var yesterdayParts = [];
+
+              var allDisappeared = disappearedBody.concat(disappearedMental).concat(disappearedHard);
+              var allAppeared    = appearedBody.concat(appearedMental).concat(appearedHard);
+              var allContinued   = continuedBody.concat(continuedMental).concat(continuedHard);
+
+              if (allDisappeared.length > 0) {
+                yesterdayParts.push(allDisappeared.join('・') + 'は前日から解消されました');
+              }
+              if (allAppeared.length > 0) {
+                yesterdayParts.push(allAppeared.join('・') + 'が新たに記録されました');
+              }
+              if (allContinued.length > 0) {
+                yesterdayParts.push(allContinued.join('・') + 'が継続して記録されています');
+              }
+
+              if (yesterdayParts.length > 0) {
+                sentences.push('\n' + yesterdayParts.join('。') + '。');
+              }
+            }
+
+            // --- テキストをつなげる ---
+            var summaryText = sentences.join('');
+
+            // --- summary.textとしてlocalStorageに保存する ---
+            if (summaryText) {
+              var latestRecords = loadRecords();
+              var latestToday = latestRecords.find(function(r) {
+                return r.date === record.date;
+              });
+              if (latestToday) {
+                latestToday.summary = {
+                  generatedAt: new Date().toISOString(),
+                  text: summaryText
+                };
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(latestRecords));
+              }
+            }
+          }
           // 2秒後に記録一覧へ遷移する（今日の日付を渡す）
           setTimeout(function() {
             window.location.href = 'records.html?date=' + record.date;
