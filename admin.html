@@ -23,6 +23,30 @@
       操作は慎重に行ってください。
     </div>
 
+    <!-- エクスポート -->
+    <div class="card mb-4">
+      <div class="card-body">
+        <h2 class="fs-6 fw-bold mb-2">データのエクスポート</h2>
+        <p class="text-muted small mb-3">記録をJSONファイルとして保存します。バックアップや機種変更のときに使ってください。</p>
+        <button class="btn btn-outline-primary" onclick="exportData()">
+          JSONファイルをダウンロードする
+        </button>
+      </div>
+    </div>
+
+    <!-- インポート -->
+    <div class="card mb-4">
+      <div class="card-body">
+        <h2 class="fs-6 fw-bold mb-2">データのインポート</h2>
+        <p class="text-muted small mb-2">保存したJSONファイルを読み込みます。</p>
+        <p class="text-danger small mb-3">⚠️ 現在の記録はすべて上書きされます。必ず事前にエクスポートしてください。</p>
+        <input type="file" id="import-file" accept=".json" class="form-control mb-2" style="max-width: 300px;">
+        <button class="btn btn-outline-danger" onclick="importData()">
+          読み込んで上書きする
+        </button>
+      </div>
+    </div>
+
     <!-- 記録一覧 -->
     <div id="records-container"></div>
 
@@ -40,6 +64,104 @@
   <script>
 
     var STORAGE_KEY = 'selfInsightRecords';
+
+    // ============================
+    // エクスポート（JSONファイルとして保存する）
+    // ============================
+
+    function exportData() {
+
+      var records = loadRecords();
+
+      if (records.length === 0) {
+        alert('エクスポートできる記録がありません');
+        return;
+      }
+
+      // JSONを文字列に変換する
+      var json = JSON.stringify(records, null, 2);
+
+      // ダウンロード用のリンクを作ってクリックする
+      var blob = new Blob([json], { type: 'application/json' });
+      var url = URL.createObjectURL(blob);
+
+      var today = new Date().toISOString().split('T')[0];
+      var filename = 'self-insight-backup-' + today + '.json';
+
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+
+      URL.revokeObjectURL(url);
+
+      showMessage('エクスポートしました：' + filename, 'success');
+    }
+
+    // ============================
+    // インポート（JSONファイルを読み込む）
+    // ============================
+
+    function importData() {
+
+      var fileInput = document.getElementById('import-file');
+      var file = fileInput.files[0];
+
+      // ファイルが選択されているか確認する
+      if (!file) {
+        alert('JSONファイルを選択してください');
+        return;
+      }
+
+      // ファイルの拡張子を確認する
+      if (!file.name.endsWith('.json')) {
+        alert('JSONファイルを選択してください（.json）');
+        return;
+      }
+
+      // 確認ダイアログを出す
+      var ok = confirm(
+        '現在の記録をすべて上書きします。\n' +
+        'この操作は元に戻せません。\n\n' +
+        '続けますか？'
+      );
+      if (!ok) return;
+
+      // ファイルを読み込む
+      var reader = new FileReader();
+
+      reader.onload = function(e) {
+
+        var parsed;
+
+        // JSONとして読み込めるか確認する
+        try {
+          parsed = JSON.parse(e.target.result);
+        } catch (error) {
+          alert('ファイルの形式が正しくありません。\nSelf Insightのバックアップファイルを選択してください。');
+          return;
+        }
+
+        // 配列かどうか確認する（最低限のチェック）
+        if (!Array.isArray(parsed)) {
+          alert('ファイルの形式が正しくありません。\nSelf Insightのバックアップファイルを選択してください。');
+          return;
+        }
+
+        // localStorageに書き込む
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
+
+        showMessage('インポートしました（' + parsed.length + '件）', 'success');
+
+        // ファイル選択をリセットする
+        fileInput.value = '';
+
+        // 画面を再描画する
+        render();
+      };
+
+      reader.readAsText(file);
+    }
 
     // ============================
     // データの読み込み・保存
