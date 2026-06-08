@@ -8,7 +8,7 @@
 </head>
 <body>
 
-  <div class="container py-4" style="max-width: 600px;">
+  <div class="container py-4" style="max-width: 600px; padding-bottom: 80px !important;">
 
     <!-- タイトル -->
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -16,7 +16,6 @@
         <h1 class="fs-4 fw-bold mb-1">Self Insight</h1>
         <p class="text-muted mb-0">分析</p>
       </div>
-      <a href="records.html" class="btn btn-outline-secondary btn-sm">記録一覧</a>
     </div>
 
     <!-- 最近のパターン -->
@@ -767,6 +766,31 @@
     showDetailPressure(validRecords);
 
   </script>
+
+  <!-- 下部固定ナビ -->
+  <nav style="
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: #ffffff;
+    border-top: 1px solid #dee2e6;
+    display: flex;
+    z-index: 100;
+  ">
+    <a href="index.html" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px 0; text-decoration:none; color:#6c757d; font-size:0.75rem;">
+      <span style="font-size:1.2rem; margin-bottom:2px;">✏️</span>
+      記録
+    </a>
+    <a href="records.html" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px 0; text-decoration:none; color:#6c757d; font-size:0.75rem;">
+      <span style="font-size:1.2rem; margin-bottom:2px;">📅</span>
+      記録一覧
+    </a>
+    <a href="analysis.html" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px 0; text-decoration:none; color:#6c757d; font-size:0.75rem;">
+      <span style="font-size:1.2rem; margin-bottom:2px;">📊</span>
+      分析
+    </a>
+  </nav>
 
 </body>
 </html>

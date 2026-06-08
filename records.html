@@ -10,7 +10,7 @@
 </head>
 <body>
 
-  <div class="container py-4" style="max-width: 600px;">
+  <div class="container py-4" style="max-width: 600px; padding-bottom: 80px !important;">
 
     <!-- タイトル -->
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -19,9 +19,7 @@
         <p class="text-muted mb-0">記録一覧</p>
       </div>
       <div class="d-flex gap-2">
-        <a href="analysis.html" class="btn btn-outline-secondary btn-sm">分析</a>
         <a href="admin.html" class="btn btn-outline-secondary btn-sm">管理</a>
-        <a href="index.html" class="btn btn-outline-primary btn-sm">＋ 記録する</a>
       </div>
     </div>
 
@@ -490,6 +488,31 @@
     }
 
   </script>
+
+  <!-- 下部固定ナビ -->
+  <nav style="
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: #ffffff;
+    border-top: 1px solid #dee2e6;
+    display: flex;
+    z-index: 100;
+  ">
+    <a href="index.html" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px 0; text-decoration:none; color:#6c757d; font-size:0.75rem;">
+      <span style="font-size:1.2rem; margin-bottom:2px;">✏️</span>
+      記録
+    </a>
+    <a href="records.html" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px 0; text-decoration:none; color:#6c757d; font-size:0.75rem;">
+      <span style="font-size:1.2rem; margin-bottom:2px;">📅</span>
+      記録一覧
+    </a>
+    <a href="analysis.html" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px 0; text-decoration:none; color:#6c757d; font-size:0.75rem;">
+      <span style="font-size:1.2rem; margin-bottom:2px;">📊</span>
+      分析
+    </a>
+  </nav>
 
 </body>
 </html>
