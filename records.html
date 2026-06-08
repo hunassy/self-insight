@@ -44,6 +44,52 @@
 
   <script>
     // ============================
+    // 祝日を取得する
+    // ============================
+
+    // 取得済みの祝日を保持する（年ごとにキャッシュする）
+    var holidayCache = {};
+
+    function fetchHolidays(year) {
+
+      // すでに取得済みの場合はスキップする
+      if (holidayCache[year]) {
+        return Promise.resolve(holidayCache[year]);
+      }
+
+      var url ='https://www.googleapis.com/calendar/v3/calendars/ja.japanese%23holiday%40group.v.calendar.google.com/events'
+        + '?key=AIzaSyA-gRkxo8BVMMFvKR8arQaV44PcJwu50nw'
+        + '&timeMin=' + year + '-01-01T00:00:00Z'
+        + '&timeMax=' + year + '-12-31T23:59:59Z'
+        + '&singleEvents=true'
+        + '&orderBy=startTime';
+
+      return fetch(url)
+        .then(function(response) {
+          return response.json();
+        })
+        .then(function(data) {
+
+          // 祝日の日付を「2026-01-01」形式でSetに入れる
+          var holidays = new Set();
+          (data.items || []).forEach(function(item) {
+            if (item.start && item.start.date) {
+              holidays.add(item.start.date);
+            }
+          });
+
+          // キャッシュに保存する
+          holidayCache[year] = holidays;
+          return holidays;
+        })
+        .catch(function(error) {
+          console.log('祝日取得失敗:', error);
+          // 失敗した場合は空のSetを返す
+          return new Set();
+        });
+    }
+
+    // ============================
     // localStorageからデータを読む
     // ============================
 
@@ -104,7 +150,13 @@
     // カレンダーを描画する
     // ============================
     function renderCalendar(records) {
+       // 表示中の年の祝日を取得してからカレンダーを描画する
+      fetchHolidays(currentYear).then(function(holidays) {
+        renderCalendarWithHolidays(records, holidays);
+      });
+    }
 
+    function renderCalendarWithHolidays(records, holidays) {
       var container = document.getElementById('calendar-container');
 
       var year  = currentYear;
@@ -158,7 +210,6 @@
             html += '<td></td>';
 
           } else {
-
             var dateString =
               year + '-' +
               String(month + 1).padStart(2, '0') + '-' +
@@ -172,13 +223,21 @@
               ? getRecordStatus(record)
               : '';
 
+            // 曜日と祝日で背景色を決める
+            var bgColor = '';
+            if (holidays.has(dateString) || col === 0) {
+              bgColor = 'background-color: #fff0f0;';
+            } else if (col === 6) {
+              bgColor = 'background-color: #e8f4ff;';
+            }
+
             html += `
               <td
-                style="cursor:pointer;"
+                style="cursor:pointer; height: 52px; vertical-align: middle; ${bgColor}"
                 onclick="showRecordDetail('${dateString}')"
               >
                 <div>${day}</div>
-                <div>${status}</div>
+                <div style="min-height: 1.2em;">${status}</div>
               </td>
             `;
 

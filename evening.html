@@ -184,9 +184,6 @@
       夜の記録を保存する
     </button>
 
-    <!-- 保存結果メッセージ -->
-    <div id="save-message" class="mt-3" style="display: none;"></div>
-
   </div><!-- /container -->
 
   <!-- Bootstrap 5 JS -->
@@ -272,6 +269,21 @@
         morningEnergy: morningEnergyToScore(morningData.vitality),
         eveningEnergy: eveningEnergyToScore(eveningData.vitality)
       };
+    }
+
+    // ============================
+    // トースト通知を表示する
+    // ============================
+
+    function showToast(message) {
+      var toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.style.display = 'block';
+
+      // 2秒後に消す
+      setTimeout(function() {
+        toast.style.display = 'none';
+      }, 2000);
     }
 
     var STORAGE_KEY = 'selfInsightRecords';
@@ -458,9 +470,7 @@
 
           console.log('保存しました:', record);
 
-          var messageDiv = document.getElementById('save-message');
-          messageDiv.innerHTML = '<div class="alert alert-success">記録しました！（' + record.date + ' ' + record.time + '）</div>';
-          messageDiv.style.display = 'block';
+          showToast('記録しました！（' + record.date + ' ' + record.time + '）');
 
           btn.disabled = false;
           btn.textContent = '夜の記録を保存する';
@@ -523,7 +533,7 @@
             if (morningMental.length > 0) morningSigns.push('メンタルは' + morningMental.join('・'));
 
             if (morningSigns.length > 0) {
-              sentences.push('朝は' + morningSigns.join('、') + 'の状態でした。');
+              sentences.push('朝の' + morningSigns.join('、') + 'の状態でした。');
             } else {
               sentences.push('朝のサイン記録はありませんでした。');
             }
@@ -671,6 +681,21 @@
         });
     });
   </script>
+
+  <!-- トースト通知 -->
+  <div id="toast" style="
+    display: none;
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background-color: #198754;
+    color: #ffffff;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    z-index: 200;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  ">記録しました</div>
 
   <!-- 下部固定ナビ -->
   <nav style="
