@@ -5,12 +5,31 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>夜の記録 - Self Insight</title>
 
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+
   <!-- Bootstrap 5 CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+
   <style>
+    /* ============================
+       カラー設定
+       色を変えたいときはここだけ修正する
+    ============================ */
+    :root {
+      --color-primary:    #6B4F5E;
+      --color-primary-hover: #8B6675;
+      --color-bg:         #F7F4F5;
+      --color-selected-text: #ffffff;
+    }
+
     body {
-      background-color: #f8f9fa;
+      background-color: var(--color-bg);
+      font-family: 'Noto Sans JP', sans-serif;
     }
 
     /* チェックボックス・ラジオボタンをボタン風にする */
@@ -33,9 +52,20 @@
 
     .sign-btn input[type="checkbox"]:checked + label,
     .sign-btn input[type="radio"]:checked + label {
-      background-color: #0d6efd;
-      color: #ffffff;
-      border-color: #0d6efd;
+      background-color: var(--color-primary);
+      color: var(--color-selected-text);
+      border-color: var(--color-primary);
+    }
+
+    /* 保存ボタン */
+    .btn-primary {
+      background-color: var(--color-primary) !important;
+      border-color: var(--color-primary) !important;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--color-primary-hover) !important;
+      border-color: var(--color-primary-hover) !important;
     }
   </style>
 </head>
@@ -176,6 +206,18 @@
       <div class="card-body">
         <h2 class="fs-6 fw-bold mb-3">補足メモ <span class="text-muted fw-normal">（自由記述）</span></h2>
         <textarea id="memo" class="form-control" rows="4" placeholder="今日のことを自由に書いてください"></textarea>
+      </div>
+    </div>
+
+    <!-- 今日の総合評価 -->
+    <div class="card mb-4">
+      <div class="card-body">
+        <h2 class="fs-6 fw-bold mb-3">今日はどんな一日でしたか？ <span class="text-muted fw-normal">（1つ選択）</span></h2>
+        <div class="sign-btn">
+          <span><input type="radio" id="dr1" name="dayRating" value="good"><label for="dr1">😀 良い日</label></span>
+          <span><input type="radio" id="dr2" name="dayRating" value="normal"><label for="dr2">😐 普通の日</label></span>
+          <span><input type="radio" id="dr3" name="dayRating" value="bad"><label for="dr3">😞 つらい日</label></span>
+        </div>
       </div>
     </div>
 
@@ -412,6 +454,7 @@
         done: getCheckedValues('done[]'),
         hard: getCheckedValues('hard[]'),
         memo: document.getElementById('memo').value,
+        dayRating: getRadioValue('dayRating'),
         weather: null,
         temperature: null,
         pressure: null
@@ -447,6 +490,7 @@
               hard: record.hard,
 
               memo: record.memo,
+              dayRating: record.dayRating,
 
               weather: record.weather,
               temperature: record.temperature,
@@ -709,15 +753,15 @@
     z-index: 100;
   ">
     <a href="index.html" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px 0; text-decoration:none; color:#6c757d; font-size:0.75rem;">
-      <span style="font-size:1.2rem; margin-bottom:2px;">✏️</span>
+      <i class="bi bi-pencil-square" style="font-size:1.2rem; margin-bottom:2px;"></i>
       記録
     </a>
     <a href="records.html" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px 0; text-decoration:none; color:#6c757d; font-size:0.75rem;">
-      <span style="font-size:1.2rem; margin-bottom:2px;">📅</span>
+      <i class="bi bi-calendar3" style="font-size:1.2rem; margin-bottom:2px;"></i>
       記録一覧
     </a>
     <a href="analysis.html" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px 0; text-decoration:none; color:#6c757d; font-size:0.75rem;">
-      <span style="font-size:1.2rem; margin-bottom:2px;">📊</span>
+      <i class="bi bi-bar-chart-line" style="font-size:1.2rem; margin-bottom:2px;"></i>
       分析
     </a>
   </nav>
