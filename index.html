@@ -238,6 +238,115 @@
     }
 
     // ============================
+    // 今日のヒント：メッセージ設定
+    // ここを書き換えるだけで文言が変わります
+    // ============================
+    var HINT_MESSAGES = {
+      notEnoughData: '記録が増えると、あなた専用のヒントが表示されます。\n（10件以上の記録で表示されます）',
+      shortSleep:    '今日は睡眠が短めです。\n予定を詰め込みすぎず、過ごしてみましょう。',
+      outingEffect:  '外出した日は調子が良い傾向があります。',
+      socialEffect:  '交流があった日は調子が良い傾向があります。',
+      noPattern:     '引き続き記録を続けると、傾向が見えてきます。'
+    };
+
+    // ============================
+    // 今日のヒントを生成する関数
+    // ============================
+
+    function generateHint(sleepHours) {
+
+      var data = localStorage.getItem(STORAGE_KEY);
+      var records = data ? JSON.parse(data) : [];
+
+      // 朝・夜両方そろっているレコードだけ使う
+      var valid = records.filter(function(r) {
+        return r.morning && r.evening;
+      });
+
+      // データが10件未満の場合
+      if (valid.length < 10) {
+        return {
+          lines: [HINT_MESSAGES.notEnoughData],
+          count: valid.length
+        };
+      }
+
+      // 睡眠が5時間以下の場合
+      if (sleepHours > 0 && sleepHours <= 5) {
+        return {
+          lines: [HINT_MESSAGES.shortSleep],
+          count: valid.length
+        };
+      }
+
+      // 外出した日の翌日スコアを計算する
+      var outingDays   = valid.filter(function(r) { return r.evening.outing === 'した'; });
+      var noOutingDays = valid.filter(function(r) { return r.evening.outing === 'しなかった'; });
+
+      var outingAvg   = outingDays.length > 0
+        ? outingDays.reduce(function(sum, r) { return sum + (r.scores.eveningEnergy || 0); }, 0) / outingDays.length
+        : null;
+      var noOutingAvg = noOutingDays.length > 0
+        ? noOutingDays.reduce(function(sum, r) { return sum + (r.scores.eveningEnergy || 0); }, 0) / noOutingDays.length
+        : null;
+
+      // 交流した日のスコアを計算する
+      var socialDays   = valid.filter(function(r) { return r.evening.socializing === 'あった'; });
+      var noSocialDays = valid.filter(function(r) { return r.evening.socializing === 'なかった'; });
+
+      var socialAvg   = socialDays.length > 0
+        ? socialDays.reduce(function(sum, r) { return sum + (r.scores.eveningEnergy || 0); }, 0) / socialDays.length
+        : null;
+      var noSocialAvg = noSocialDays.length > 0
+        ? noSocialDays.reduce(function(sum, r) { return sum + (r.scores.eveningEnergy || 0); }, 0) / noSocialDays.length
+        : null;
+
+      // 表示するメッセージを集める
+      var lines = [];
+
+      if (outingAvg !== null && noOutingAvg !== null && (outingAvg - noOutingAvg) >= 0.5) {
+        lines.push(HINT_MESSAGES.outingEffect);
+      }
+
+      if (socialAvg !== null && noSocialAvg !== null && (socialAvg - noSocialAvg) >= 0.5) {
+        lines.push(HINT_MESSAGES.socialEffect);
+      }
+
+      if (lines.length === 0) {
+        lines.push(HINT_MESSAGES.noPattern);
+      }
+
+      return {
+        lines: lines,
+        count: valid.length
+      };
+    }
+
+    // ============================
+    // 今日のヒントモーダルを表示する関数
+    // ============================
+
+    function showHintModal(sleepHours) {
+
+      var hint = generateHint(sleepHours);
+
+      // メッセージをHTML化する
+      var messageHtml = hint.lines.map(function(line) {
+        return '<p style="margin: 0 0 8px 0;">'
+          + line.replace(/\n/g, '<br>')
+          + '</p>';
+      }).join('');
+
+      document.getElementById('hint-message').innerHTML = messageHtml;
+      document.getElementById('hint-modal').style.display = 'flex';
+    }
+
+    // モーダルを閉じる関数
+    function closeHintModal() {
+      document.getElementById('hint-modal').style.display = 'none';
+    }
+
+    // ============================
     // localStorage への保存・読み込み
     // ============================
 
@@ -411,6 +520,8 @@
           btn.disabled = false;
           btn.textContent = '朝の記録を保存する';
 
+          showHintModal(record.sleepHours);
+
           // 7. 3秒後にメッセージを消す
           setTimeout(function() {
             messageDiv.style.display = 'none';
@@ -419,6 +530,52 @@
     });
   </script>
 
+  <!-- 今日のヒント モーダル -->
+  <div id="hint-modal" style="
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: rgba(0,0,0,0.4);
+    z-index: 300;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  " onclick="closeHintModal()">
+
+    <div style="
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 24px;
+      max-width: 400px;
+      width: 100%;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    " onclick="event.stopPropagation()">
+
+      <div style="font-size: 1.1rem; font-weight: bold; margin-bottom: 16px;">
+        💡 今日のヒント
+      </div>
+
+      <div id="hint-message" style="
+        font-size: 0.95rem;
+        line-height: 1.6;
+        color: #333;
+      "></div>
+
+      <button onclick="closeHintModal()" style="
+        margin-top: 16px;
+        width: 100%;
+        padding: 10px;
+        background-color: #0d6efd;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        cursor: pointer;
+      ">閉じる</button>
+
+    </div>
+  </div>
+  
   <!-- トースト通知 -->
   <div id="toast" style="
     display: none;
