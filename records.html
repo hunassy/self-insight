@@ -146,9 +146,9 @@
 
       // 朝夜両方ある場合はdayRatingで色丸を表示する
       if (record.morning && record.evening) {
-        if (record.evening.dayRating === 'good')   return '🟢';
-        if (record.evening.dayRating === 'normal') return '🟡';
-        if (record.evening.dayRating === 'bad')    return '🔴';
+        if (record.evening.dayRating === 'good')   return '<span style="color: #7BAE8B;">●</span>';
+        if (record.evening.dayRating === 'normal') return '<span style="color: #B0A0AA;">●</span>';
+        if (record.evening.dayRating === 'bad')    return '<span style="color: #9B7A8A;">●</span>';
         // dayRatingがない古いレコードはそのまま
         return '◎';
       }
@@ -423,9 +423,9 @@
 
       // 総合評価を日本語に変換する
       function getDayRatingText(rating) {
-        if (rating === 'good')   return '😀 良い日';
-        if (rating === 'normal') return '😐 普通の日';
-        if (rating === 'bad')    return '😞 つらい日';
+        if (rating === 'good')   return '<i class="bi bi-sun" style="color: #7BAE8B;"></i> 良い日';
+        if (rating === 'normal') return '<i class="bi bi-cloud" style="color: #B0A0AA;"></i> 普通の日';
+        if (rating === 'bad')    return '<i class="bi bi-cloud-rain" style="color: #9B7A8A;"></i> つらい日';
         return '未記録';
       }
 
