@@ -38,16 +38,66 @@
       display: none;
     }
 
+    /* ボタンを横に並べるとき上端を揃える */
+    .sign-btn {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+    }
+
     .sign-btn label {
-      display: inline-block;
-      padding: 6px 14px;
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between; /* 上下に分散させる */
+      padding-top: 10px;
+      padding-bottom: 8px;            /* 下の余白を固定 */
+      width: 72px;
+      height: 72px;
       margin: 4px;
       border: 1px solid #dee2e6;
-      border-radius: 20px;
+      border-radius: 12px;
       background-color: #ffffff;
       cursor: pointer;
-      font-size: 0.9rem;
       user-select: none;
+      gap: 0;
+      color: #555;
+      text-align: center;
+      line-height: 1.2;
+    }
+
+    /* 睡眠満足度：テキストを中央に表示する */
+    .sign-btn-sleep label {
+      justify-content: center;
+    }
+
+    /* 睡眠満足度：フォントサイズを大きくする */
+    .sign-btn-sleep label .text-sm {
+      font-size: 0.75rem !important;
+    }
+
+    /* アイコン（絵文字）部分 */
+    /* アイコン部分：高さを固定して揃える */
+    .sign-btn label .icon {
+      font-size: 1.6rem;
+      line-height: 1;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* テキスト：通常 */
+    .sign-btn label .text {
+      font-size: 0.68rem;
+    }
+
+    /* テキスト：長いもの用（少し小さく） */
+    .sign-btn label .text-sm {
+      font-size: 0.58rem;
+      line-height: 1.3;
     }
 
     .sign-btn input[type="checkbox"]:checked + label,
@@ -106,19 +156,24 @@
         <!-- 睡眠満足度 -->
         <div>
           <label class="form-label">睡眠満足度</label>
-          <div class="sign-btn">
-            <span><input type="radio" id="s1" name="sleep-quality" value="1"><label for="s1">1</label></span>
-            <span><input type="radio" id="s2" name="sleep-quality" value="2"><label for="s2">2</label></span>
-            <span><input type="radio" id="s3" name="sleep-quality" value="3"><label for="s3">3</label></span>
-            <span><input type="radio" id="s4" name="sleep-quality" value="4"><label for="s4">4</label></span>
-            <span><input type="radio" id="s5" name="sleep-quality" value="5"><label for="s5">5</label></span>
-          </div>
-          <div class="d-flex justify-content-between mt-1" style="max-width: 230px;">
-            <small class="text-muted">よくない</small>
-            <small class="text-muted">よい</small>
+          <div class="sign-btn sign-btn-sleep">
+            <span><input type="radio" id="s1" name="sleep-quality" value="1">
+              <label for="s1"><span class="text-sm">眠れな<br>かった</span></label>
+            </span>
+            <span><input type="radio" id="s2" name="sleep-quality" value="2">
+              <label for="s2"><span class="text-sm">寝付き✕<br>寝起き✕</span></label>
+            </span>
+            <span><input type="radio" id="s3" name="sleep-quality" value="3">
+              <label for="s3"><span class="text-sm">寝付き〇<br>寝起き✕</span></label>
+            </span>
+            <span><input type="radio" id="s4" name="sleep-quality" value="4">
+              <label for="s4"><span class="text-sm">寝付き✕<br>寝起き〇</span></label>
+            </span>
+            <span><input type="radio" id="s5" name="sleep-quality" value="5">
+              <label for="s5"><span class="text-sm">よく<br>眠れた</span></label>
+            </span>
           </div>
         </div>
-
       </div>
     </div>
 
@@ -127,16 +182,88 @@
       <div class="card-body">
         <h2 class="fs-6 fw-bold mb-3">体調サイン <span class="text-muted fw-normal">（複数選択）</span></h2>
         <div class="sign-btn">
-          <span><input type="checkbox" id="b1" name="body[]" value="問題なし"><label for="b1">問題なし</label></span>
-          <span><input type="checkbox" id="b2" name="body[]" value="身体が軽い"><label for="b2">身体が軽い</label></span>
-          <span><input type="checkbox" id="b3" name="body[]" value="眠い"><label for="b3">眠い</label></span>
-          <span><input type="checkbox" id="b4" name="body[]" value="だるい"><label for="b4">だるい</label></span>
-          <span><input type="checkbox" id="b5" name="body[]" value="強い疲労感"><label for="b5">強い疲労感</label></span>
-          <span><input type="checkbox" id="b6" name="body[]" value="目の疲れ"><label for="b6">目の疲れ</label></span>
-          <span><input type="checkbox" id="b7" name="body[]" value="頭痛"><label for="b7">頭痛</label></span>
-          <span><input type="checkbox" id="b8" name="body[]" value="肩こり・首こり"><label for="b8">肩こり・首こり</label></span>
-          <span><input type="checkbox" id="b9" name="body[]" value="食欲不振"><label for="b9">食欲不振</label></span>
-          <span><input type="checkbox" id="b10" name="body[]" value="過食"><label for="b10">過食</label></span>
+          <span><input type="checkbox" id="b1" name="body[]" value="問題なし">
+            <label for="b1">
+              <div style="width:36px; height:36px; display:flex; align-items:center; justify-content:center;">
+                <i class="bi bi-check-circle" style="font-size:1.6rem;"></i>
+              </div>
+              <span class="text">問題なし</span>
+            </label>
+          </span>
+
+          <span><input type="checkbox" id="b2" name="body[]" value="身体が軽い">
+            <label for="b2">
+              <div style="width:36px; height:36px; display:flex; align-items:center; justify-content:center;">
+                <i class="bi bi-feather" style="font-size:1.6rem;"></i>
+              </div>
+              <span class="text">身体が軽い</span>
+            </label>
+          </span>
+
+          <span><input type="checkbox" id="b3" name="body[]" value="眠い">
+            <label for="b3">
+              <div style="width:36px; height:36px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                <img src="images/29537.png" style="max-width:36px; max-height:36px; width:auto; height:auto;">
+              </div>
+              <span class="text">眠い</span>
+            </label>
+          </span>
+
+          <span><input type="checkbox" id="b9" name="body[]" value="だるい">
+            <label for="b9">
+              <div style="width:36px; height:36px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                <img src="images/30653.png" style="max-width:36px; max-height:36px; width:auto; height:auto;">
+              </div>
+              <span class="text">だるい</span>
+            </label>
+          </span>
+
+          <span><input type="checkbox" id="b5" name="body[]" value="強い疲労感">
+            <label for="b5">
+              <div style="width:36px; height:36px; display:flex; align-items:center; justify-content:center;">
+                <img src="images/27658.png" style="max-width:36px; max-height:36px; width:auto; height:auto;">
+              </div>
+              <span class="text-sm">強い<br>疲労感</span>
+            </label>
+          </span>
+
+          <span><input type="checkbox" id="b6" name="body[]" value="目の疲れ">
+            <label for="b6"><i class="bi bi-eye-slash icon"></i><span class="text">目の疲れ</span></label></span>
+
+          <span><input type="checkbox" id="b7" name="body[]" value="頭痛">
+            <label for="b7">
+              <div style="width:36px; height:36px; display:flex; align-items:center; justify-content:center;">
+                <img src="images/5333.png" style="max-width:36px; max-height:36px; width:auto; height:auto;">
+              </div>
+              <span class="text">頭痛</span>
+            </label>
+          </span>
+
+          <span><input type="checkbox" id="b8" name="body[]" value="肩こり・首こり">
+            <label for="b8">
+              <div style="width:36px; height:36px; display:flex; align-items:center; justify-content:center;">
+                <img src="images/20668.png" style="max-width:36px; max-height:36px; width:auto; height:auto;">
+              </div>
+              <span class="text-sm">肩こり・首こり</span>
+            </label>
+          </span>
+
+          <span><input type="checkbox" id="b9" name="body[]" value="食欲不振">
+            <label for="b9">
+              <div style="width:36px; height:36px; display:flex; align-items:center; justify-content:center;">
+              <img src="images/9779.png" style="width:36px; height:auto;">
+              </div>
+              <span class="text">食欲不振</span>
+            </label>
+          </span>
+
+          <span><input type="checkbox" id="b10" name="body[]" value="過食">
+            <label for="b10">
+              <div style="width:36px; height:36px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                <img src="images/26620.png" style="width:36px; height:auto;">
+              </div>
+              <span class="text">過食</span>
+            </label>
         </div>
       </div>
     </div>
@@ -146,17 +273,62 @@
       <div class="card-body">
         <h2 class="fs-6 fw-bold mb-3">メンタルサイン <span class="text-muted fw-normal">（複数選択）</span></h2>
         <div class="sign-btn">
-          <span><input type="checkbox" id="m1" name="mental[]" value="穏やか"><label for="m1">穏やか</label></span>
-          <span><input type="checkbox" id="m2" name="mental[]" value="前向き"><label for="m2">前向き</label></span>
-          <span><input type="checkbox" id="m3" name="mental[]" value="不安"><label for="m3">不安</label></span>
-          <span><input type="checkbox" id="m4" name="mental[]" value="落ち込み"><label for="m4">落ち込み</label></span>
-          <span><input type="checkbox" id="m5" name="mental[]" value="イライラ"><label for="m5">イライラ</label></span>
-          <span><input type="checkbox" id="m6" name="mental[]" value="焦り"><label for="m6">焦り</label></span>
-          <span><input type="checkbox" id="m7" name="mental[]" value="無気力"><label for="m7">無気力</label></span>
-          <span><input type="checkbox" id="m8" name="mental[]" value="緊張"><label for="m8">緊張</label></span>
-          <span><input type="checkbox" id="m9" name="mental[]" value="考えがまとまらない"><label for="m9">考えがまとまらない</label></span>
-          <span><input type="checkbox" id="m10" name="mental[]" value="集中しにくい"><label for="m10">集中しにくい</label></span>
-          <span><input type="checkbox" id="m11" name="mental[]" value="憂鬱"><label for="m11">憂鬱</label></span>
+          <span><input type="checkbox" id="m1" name="mental[]" value="穏やか">
+            <label for="m1"><i class="bi bi-emoji-smile icon"></i><span class="text">穏やか</span></label></span>
+
+          <span><input type="checkbox" id="m2" name="mental[]" value="前向き">
+            <label for="m2"><i class="bi bi-emoji-laughing icon"></i><span class="text">前向き</span></label></span>
+
+          <span><input type="checkbox" id="m3" name="mental[]" value="不安">
+            <label for="m3"><i class="bi bi-emoji-frown icon"></i><span class="text">不安</span></label></span>
+
+          <span><input type="checkbox" id="m4" name="mental[]" value="落ち込み">
+            <label for="m4"><i class="bi bi-emoji-tear icon"></i><span class="text">落ち込み</span></label></span>
+
+          <span><input type="checkbox" id="m5" name="mental[]" value="イライラ">
+            <label for="m5"><i class="bi bi-emoji-angry icon"></i><span class="text">イライラ</span></label></span>
+
+          <span><input type="checkbox" id="m6" name="mental[]" value="焦り">
+            <label for="m6"><i class="bi bi-hourglass-split icon"></i><span class="text">焦り</span></label></span>
+
+          <span><input type="checkbox" id="m7" name="mental[]" value="無気力">
+            <label for="m7"><i class="bi bi-battery icon"></i><span class="text">無気力</span></label></span>
+
+          <span><input type="checkbox" id="m8" name="mental[]" value="緊張">
+            <label for="m8">
+              <div style="width:36px; height:36px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                <img src="images/20250.png" style="max-width:36px; max-height:36px; width:auto; height:auto;">
+              </div>
+              <span class="text">緊張</span>
+            </label>
+          </span>
+
+          <span><input type="checkbox" id="m9" name="mental[]" value="考えがまとまらない">
+            <label for="m9">
+              <div style="width:36px; height:36px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                <img src="images/28493.png" style="max-width:36px; max-height:36px; width:auto; height:auto;">
+              </div>
+              <span class="text-sm">考えが<br>まとまらない</span>
+            </label>
+          </span>
+
+          <span><input type="checkbox" id="m10" name="mental[]" value="集中しにくい">
+            <label for="m10">
+              <div style="width:36px; height:36px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                <img src="images/32925.png" style="max-width:36px; max-height:36px; width:auto; height:auto;">
+              </div>
+              <span class="text-sm">集中<br>しにくい</span>
+            </label>
+          </span>
+
+          <span><input type="checkbox" id="m11" name="mental[]" value="憂鬱">
+            <label for="m11">
+              <div style="width:36px; height:36px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                <img src="images/29494.png" style="max-width:36px; max-height:36px; width:auto; height:auto;">
+              </div>
+              <span class="text">憂鬱</span>
+            </label>
+          </span>
         </div>
       </div>
     </div>
@@ -166,10 +338,42 @@
       <div class="card-body">
         <h2 class="fs-6 fw-bold mb-3">活力サイン <span class="text-muted fw-normal">（1つ選択）</span></h2>
         <div class="sign-btn">
-          <span><input type="radio" id="v1" name="vitality" value="いつもより動けそう"><label for="v1">いつもより動けそう</label></span>
-          <span><input type="radio" id="v2" name="vitality" value="いつも通りのことはできる"><label for="v2">いつも通りのことはできる</label></span>
-          <span><input type="radio" id="v3" name="vitality" value="少し頑張れば動ける"><label for="v3">少し頑張れば動ける</label></span>
-          <span><input type="radio" id="v4" name="vitality" value="何もしたくない"><label for="v4">何もしたくない</label></span>
+          <span><input type="radio" id="v1" name="vitality" value="いつもより動けそう">
+            <label for="v1">
+              <div style="width:36px; height:36px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                <img src="images/32759.png" style="max-width:36px; max-height:36px; width:auto; height:auto;">
+              </div>
+              <span class="text-sm">いつもより<br>動けそう</span>
+            </label>
+          </span>
+
+          <span><input type="radio" id="v2" name="vitality" value="いつも通りのことはできる">
+            <label for="v2">
+              <div style="width:36px; height:36px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                <img src="images/26327.png" style="max-width:36px; max-height:36px; width:auto; height:auto;">
+              </div>
+              <span class="text-sm">いつも通り<br>動ける</span>
+            </label>
+          </span>
+
+          <span><input type="radio" id="v3" name="vitality" value="少し頑張れば動ける">
+            <label for="v3">
+              <div style="width:36px; height:36px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                <img src="images/11188.png" style="max-width:36px; max-height:36px; width:auto; height:auto;">
+              </div>
+              <span class="text-sm">少し頑張れ<br>ば動ける</span>
+            </label>
+          </span>
+
+          <span><input type="radio" id="v4" name="vitality" value="何もしたくない">
+            <label for="v4">
+              <div style="width:36px; height:36px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                <img src="images/29409.png" style="max-width:36px; max-height:36px; width:auto; height:auto;">
+              </div>
+              <span class="text-sm">何もした<br>くない</span>
+            </label>
+          </span>
+
         </div>
       </div>
     </div>
