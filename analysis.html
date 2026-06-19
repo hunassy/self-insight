@@ -178,6 +178,16 @@
       return sum / arr.length;
     }
 
+    // 作業時間を取得する（新旧どちらのデータ形式でも読めるようにする）
+    // 新しい記録 → workDuration を見る
+    // 古い記録   → workHours を見る
+    function getWorkDuration(record) {
+      if (record.evening.workDuration !== undefined) {
+        return record.evening.workDuration;
+      }
+      return record.evening.workHours || 0;
+    }
+
     // ============================
     // 分析用データを絞り込む
     // ============================
@@ -327,8 +337,8 @@
       var shortSleep  = badDays.filter(function(r) { return r.morning.sleepHours < 6; }).length;
       var noOuting    = badDays.filter(function(r) { return r.evening.outing === 'しなかった'; }).length;
       var noSocial    = badDays.filter(function(r) { return r.evening.socializing === 'なかった'; }).length;
-      var longWork    = badDays.filter(function(r) { return r.evening.workHours >= 7; }).length;
-      var noWork      = badDays.filter(function(r) { return r.evening.workHours === 0; }).length;
+      var longWork    = badDays.filter(function(r) { return getWorkDuration(r) >= 7; }).length;
+      var noWork      = badDays.filter(function(r) { return getWorkDuration(r) === 0; }).length;
 
       var html = '<div class="mt-2">';
       html += '<div class="small text-muted mb-2">活力・メンタルが低下した日（' + badDays.length + '件）の行動：</div>';
@@ -370,10 +380,10 @@
       var sleep7     = stableDays.filter(function(r) { return r.morning.sleepHours >= 7; }).length;
       var outing     = stableDays.filter(function(r) { return r.evening.outing === 'した'; }).length;
       var social     = stableDays.filter(function(r) { return r.evening.socializing === 'あった'; }).length;
-      var work3to4   = stableDays.filter(function(r) { return r.evening.workHours >= 3 && r.evening.workHours <= 4; }).length;
+      var work3to4   = stableDays.filter(function(r) { return getWorkDuration(r) >= 3 && getWorkDuration(r) <= 4; }).length;
 
       var avgSleep   = average(stableDays.map(function(r) { return r.morning.sleepHours; }));
-      var avgWork    = average(stableDays.map(function(r) { return r.evening.workHours; }));
+      var avgWork    = average(stableDays.map(function(r) { return getWorkDuration(r); }));
 
       var html = '<div class="mt-2">';
       html += '<div class="small text-muted mb-2">体調・メンタル・活力が安定した日（' + stableDays.length + '件）：</div>';
@@ -394,6 +404,7 @@
 
     function showDetailWeather(validRecords) {
       var container = document.getElementById('detail-weather');
+      if (!container) return;
 
       if (validRecords.length < 5) {
         container.innerHTML = notEnoughData();
@@ -432,6 +443,7 @@
 
     function showDetailPressure(validRecords) {
       var container = document.getElementById('detail-pressure');
+      if (!container) return;
 
       if (validRecords.length < 5) {
         container.innerHTML = notEnoughData();
@@ -465,6 +477,7 @@
     // 睡眠と状態の個別分析
     function showDetailSleep(validRecords) {
       var container = document.getElementById('detail-sleep');
+      if (!container) return;
       if (validRecords.length < 5) {
         container.innerHTML = notEnoughData();
         return;
@@ -482,6 +495,7 @@
     // 外出と状態の個別分析
     function showDetailOuting(validRecords) {
       var container = document.getElementById('detail-outing');
+      if (!container) return;
       if (validRecords.length < 5) {
         container.innerHTML = notEnoughData();
         return;
@@ -498,6 +512,7 @@
     // 交流と状態の個別分析
     function showDetailSocial(validRecords) {
       var container = document.getElementById('detail-social');
+      if (!container) return;
       if (validRecords.length < 5) {
         container.innerHTML = notEnoughData();
         return;
@@ -514,16 +529,17 @@
     // 作業時間と状態の個別分析
     function showDetailWork(validRecords) {
       var container = document.getElementById('detail-work');
+      if (!container) return;
       if (validRecords.length < 5) {
         container.innerHTML = notEnoughData();
         return;
       }
 
       var groups = [
-        { label: '0時間',    records: validRecords.filter(function(r) { return r.evening.workHours === 0; }) },
-        { label: '1〜3時間', records: validRecords.filter(function(r) { return r.evening.workHours > 0 && r.evening.workHours <= 3; }) },
-        { label: '4〜6時間', records: validRecords.filter(function(r) { return r.evening.workHours > 3 && r.evening.workHours <= 6; }) },
-        { label: '7時間以上', records: validRecords.filter(function(r) { return r.evening.workHours > 6; }) }
+        { label: '0時間',    records: validRecords.filter(function(r) { return getWorkDuration(r) === 0; }) },
+        { label: '1〜3時間', records: validRecords.filter(function(r) { return getWorkDuration(r) > 0 && getWorkDuration(r) <= 3; }) },
+        { label: '4〜6時間', records: validRecords.filter(function(r) { return getWorkDuration(r) > 3 && getWorkDuration(r) <= 6; }) },
+        { label: '7時間以上', records: validRecords.filter(function(r) { return getWorkDuration(r) > 6; }) }
       ];
 
       container.innerHTML = renderDetailTable(groups);
@@ -593,9 +609,9 @@
       });
 
       // --- 作業時間 ---
-      var work1to3 = validRecords.filter(function(r) { return r.evening.workHours > 0 && r.evening.workHours <= 3; });
-      var work4to6 = validRecords.filter(function(r) { return r.evening.workHours > 3 && r.evening.workHours <= 6; });
-      var work0    = validRecords.filter(function(r) { return r.evening.workHours === 0; });
+      var work1to3 = validRecords.filter(function(r) { return getWorkDuration(r) > 0 && getWorkDuration(r) <= 3; });
+      var work4to6 = validRecords.filter(function(r) { return getWorkDuration(r) > 3 && getWorkDuration(r) <= 6; });
+      var work0    = validRecords.filter(function(r) { return getWorkDuration(r) === 0; });
 
       [
         { group: work4to6, other: work0, label: '作業時間4〜6時間の日は', metric: 'eveningEnergy', metricLabel: '活力が高い' },
@@ -698,8 +714,8 @@
       html += '</div>';
 
       // 作業時間の比較
-      var thisWeekWork = average(thisWeek.map(function(r) { return r.evening.workHours || 0; }));
-      var lastWeekWork = average(lastWeek.map(function(r) { return r.evening.workHours || 0; }));
+      var thisWeekWork = average(thisWeek.map(function(r) { return getWorkDuration(r); }));
+      var lastWeekWork = average(lastWeek.map(function(r) { return getWorkDuration(r); }));
       html += '<div class="mb-2">';
       html += '<div class="small text-muted">作業時間（平均）</div>';
       if (lastWeek.length > 0 && lastWeekWork !== null) {

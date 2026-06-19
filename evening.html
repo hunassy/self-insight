@@ -367,16 +367,6 @@
       <div class="card-body">
         <h2 class="fs-6 fw-bold mb-3">行動</h2>
 
-        <!-- 作業時間 -->
-        <div class="mb-3">
-          <label for="work-hours" class="form-label">作業時間</label>
-          <div class="d-flex align-items-center gap-2">
-            <input type="number" id="work-hours" class="form-control" style="width: 80px;"
-              min="0" max="24" step="0.5" placeholder="0">
-            <span class="text-muted">時間</span>
-          </div>
-        </div>
-
         <!-- 外出 -->
         <div class="mb-3">
           <label class="form-label">外出</label>
@@ -395,6 +385,27 @@
           </div>
         </div>
 
+      </div>
+    </div>
+
+    <!-- 今日の作業 -->
+    <div class="card mb-3">
+      <div class="card-body">
+        <h2 class="fs-6 fw-bold mb-3">今日の作業</h2>
+
+        <div class="mb-3">
+          <label for="work-start-time" class="form-label">開始時刻</label>
+          <select id="work-start-time" class="form-select" style="width: 140px;">
+            <option value="">未記録</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="work-duration" class="form-label">作業時間</label>
+          <select id="work-duration" class="form-select" style="width: 140px;">
+            <option value="">未記録</option>
+          </select>
+        </div>
       </div>
     </div>
 
@@ -477,6 +488,46 @@
       var radio = document.querySelector('input[name="' + name + '"]:checked');
       return radio ? radio.value : null;
     }
+
+    // ============================
+    // 開始時刻・作業時間のプルダウンを作る
+    // ============================
+
+    // 開始時刻（06:00〜23:30、30分刻み）
+    function populateWorkStartTimeOptions() {
+      var select = document.getElementById('work-start-time');
+      var hour = 6;
+      var minute = 0;
+      while (hour < 24) {
+        var h = String(hour).padStart(2, '0');
+        var m = String(minute).padStart(2, '0');
+        var option = document.createElement('option');
+        option.value = h + ':' + m;
+        option.textContent = h + ':' + m;
+        select.appendChild(option);
+
+        minute += 30;
+        if (minute === 60) {
+          minute = 0;
+          hour++;
+        }
+      }
+    }
+
+    // 作業時間（0〜12時間、0.5時間刻み）
+    function populateWorkDurationOptions() {
+      var select = document.getElementById('work-duration');
+      for (var i = 0; i <= 24; i++) {
+        var hours = i * 0.5;
+        var option = document.createElement('option');
+        option.value = hours;
+        option.textContent = hours + '時間';
+        select.appendChild(option);
+      }
+    }
+
+    populateWorkStartTimeOptions();
+    populateWorkDurationOptions();
 
     // ============================
     // スコア計算の関数
@@ -676,8 +727,10 @@
         body: getCheckedValues('body[]'),
         mental: getCheckedValues('mental[]'),
         vitality: getRadioValue('vitality'),
-        workHours: Number(document.getElementById('work-hours').value),
+        workStartTime: document.getElementById('work-start-time').value,
+        workDuration: Number(document.getElementById('work-duration').value) || 0,
         outing: getRadioValue('outing'),
+
         socializing: getRadioValue('socializing'),
         done: getCheckedValues('done[]'),
         hard: getCheckedValues('hard[]'),
@@ -710,7 +763,8 @@
               mental: record.mental,
               vitality: record.vitality,
 
-              workHours: record.workHours,
+              workStartTime: record.workStartTime,
+              workDuration: record.workDuration,
               outing: record.outing,
               socializing: record.socializing,
 
