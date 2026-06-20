@@ -152,6 +152,14 @@
       return d.toISOString().split('T')[0];
     }
 
+    // 日付文字列（例：2026-06-03）を「6/3」の形式に変換する
+    function formatDateMD(dateString) {
+      var parts = dateString.split('-');
+      var month = Number(parts[1]);
+      var day   = Number(parts[2]);
+      return month + '/' + day;
+    }
+
     // ============================
     // スコアのヘルパー
     // ============================
@@ -688,6 +696,7 @@
 
       // 今週（直近7日）と先週（8〜14日前）に分ける
       var thisWeek = getRecentRecords(validAll, 7);
+      var thisWeekFrom = getDaysAgo(today, 7);
       var lastWeekFrom = getDaysAgo(today, 14);
       var lastWeekTo   = getDaysAgo(today, 8);
       var lastWeek = validAll.filter(function(r) {
@@ -701,6 +710,15 @@
 
       var html = '';
 
+      // 期間の見出し（先週分のデータがある場合だけ表示）
+      if (lastWeek.length > 0) {
+        html += '<div class="small text-muted mb-3">';
+        html += '先週との比較<br>';
+        html += '（' + formatDateMD(lastWeekFrom) + '〜' + formatDateMD(lastWeekTo)
+              + ' → ' + formatDateMD(thisWeekFrom) + '〜' + formatDateMD(today) + '）';
+        html += '</div>';
+      }
+      
       // 外出日数の比較
       var thisWeekOuting = thisWeek.filter(function(r) { return r.evening.outing === 'した'; }).length;
       var lastWeekOuting = lastWeek.filter(function(r) { return r.evening.outing === 'した'; }).length;
