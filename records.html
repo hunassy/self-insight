@@ -139,6 +139,16 @@
       return JSON.parse(data);
     }
 
+    // 作業時間を取得する（新旧どちらのデータ形式でも読める）
+    // 新しい記録 → workDuration を見る
+    // 古い記録   → workHours を見る
+    function getWorkDuration(evening) {
+      if (evening.workDuration !== undefined) {
+        return evening.workDuration;
+      }
+      return evening.workHours || 0;
+    }
+
     // ============================
     // 記録の状態を表す文字を返す
     // ============================
@@ -538,7 +548,7 @@
 
             <div class="mb-3">
               <div class="fw-bold mb-1">＜行動＞</div>
-              <div>作業時間：${record.evening.workHours || 0}時間</div>
+              <div>作業時間：${getWorkDuration(record.evening)}時間</div>
               <div>外出：${record.evening.outing || '-'}</div>
               <div>交流：${record.evening.socializing || '-'}</div>
             </div>

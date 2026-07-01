@@ -49,7 +49,7 @@ var server = http.createServer(function(req, res) {
 
       var requestBody = JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 1000,
+        max_tokens: 300,
         messages: [
           { role: 'user', content: parsed.prompt }
         ]
