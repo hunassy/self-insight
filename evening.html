@@ -883,7 +883,7 @@
 
             // --- AIを呼び出して文章を生成する ---
 
-            fetch('http://localhost:3000/api/summary', {
+            fetch('https://self-insight-api.gudelove0919.workers.dev/api/summary', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json'
@@ -896,7 +896,7 @@
               return response.json();
             })
             .then(function(data) {
-
+        
               // Anthropicの返答からテキストを取り出す
               var summaryText = '';
               if (data.content && data.content.length > 0) {
