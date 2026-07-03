@@ -200,11 +200,13 @@
     // 分析用データを絞り込む
     // ============================
 
-    // 朝・夜両方あるレコードのみ返す
     function getValidRecords(records) {
       return records.filter(function(r) {
-        return r.morning && r.evening && r.scores &&
-          r.scores.physical !== undefined;
+        // dayRatingがある夜の記録があるレコードだけ対象にする
+        return r.evening &&
+          (r.evening.dayRating === 'good' ||
+           r.evening.dayRating === 'normal' ||
+           r.evening.dayRating === 'bad');
       });
     }
 
@@ -562,19 +564,32 @@
 
       var results = [];
 
-      // --- 睡眠 ---
-      var sleepShort  = validRecords.filter(function(r) { return r.morning.sleepHours < 6; });
-      var sleepMiddle = validRecords.filter(function(r) { return r.morning.sleepHours >= 6 && r.morning.sleepHours < 7; });
-      var sleepLong   = validRecords.filter(function(r) { return r.morning.sleepHours >= 7; });
+      // dayRatingを数値に変換するヘルパー関数
+      function toScore(r) {
+        if (r.evening.dayRating === 'good')   return 1;
+        if (r.evening.dayRating === 'normal') return 0;
+        if (r.evening.dayRating === 'bad')    return -1;
+        return 0;
+      }
 
+      //console.table(validRecords.map(function(r) {return {date: r.date,dayRating: r.evening.dayRating,score: toScore(r)};}));
+
+      //console.log('score分布:',validRecords.reduce(function(acc, r) {var s = toScore(r);acc[s] = (acc[s] || 0) + 1;return acc;}, {}));
+
+      // --- 睡眠 ---
+      var sleepShort  = validRecords.filter(function(r) { return r.morning && r.morning.sleepHours < 6; });
+      var sleepMiddle = validRecords.filter(function(r) { return r.morning && r.morning.sleepHours >= 6 && r.morning.sleepHours < 7; });
+      var sleepLong   = validRecords.filter(function(r) { return r.morning && r.morning.sleepHours >= 7; });
+      var wentOutRecords = validRecords.filter(function(r) { return r.evening.outing === 'した'; });
+      var stayedInRecords = validRecords.filter(function(r) { return r.evening.outing === 'しなかった'; });
+      
       [
-        { group: sleepLong,   other: sleepShort,  label: '睡眠7時間以上の日は', metric: 'eveningEnergy', metricLabel: '活力が高い' },
-        { group: sleepShort,  other: sleepLong,   label: '睡眠6時間未満の日は', metric: 'eveningEnergy', metricLabel: '活力が低い' },
-        { group: sleepLong,   other: sleepShort,  label: '睡眠7時間以上の日は', metric: 'mental',        metricLabel: 'メンタルが安定する' },
+        { group: sleepLong,  other: sleepShort, label: '睡眠7時間以上の日は', metricLabel: '調子が良い' },
+        { group: sleepShort, other: sleepLong,  label: '睡眠6時間未満の日は', metricLabel: '調子が低下しやすい' },
       ].forEach(function(pattern) {
         if (pattern.group.length < 5 || pattern.other.length < 5) return;
-        var avg1 = average(pattern.group.map(function(r) { return r.scores[pattern.metric]; }));
-        var avg2 = average(pattern.other.map(function(r) { return r.scores[pattern.metric]; }));
+        var avg1 = average(pattern.group.map(function(r) { return toScore(r); }));
+        var avg2 = average(pattern.other.map(function(r) { return toScore(r); }));
         if (avg1 === null || avg2 === null) return;
         var diff = avg1 - avg2;
         if (diff < 0.5) return;
@@ -582,17 +597,16 @@
       });
 
       // --- 外出 ---
-      var wentOut   = validRecords.filter(function(r) { return r.evening.outing === 'した'; });
-      var stayedIn  = validRecords.filter(function(r) { return r.evening.outing === 'しなかった'; });
+      var wentOut  = validRecords.filter(function(r) { return r.evening.outing === 'した'; });
+      var stayedIn = validRecords.filter(function(r) { return r.evening.outing === 'しなかった'; });
 
       [
-        { group: wentOut,  other: stayedIn, label: '外出した日は', metric: 'mental',        metricLabel: 'メンタルが安定する' },
-        { group: wentOut,  other: stayedIn, label: '外出した日は', metric: 'eveningEnergy', metricLabel: '活力が高い' },
-        { group: stayedIn, other: wentOut,  label: '外出しなかった日は', metric: 'mental',  metricLabel: 'メンタルが低下しやすい' },
+        { group: wentOut,  other: stayedIn, label: '外出した日は',      metricLabel: '調子が良い' },
+        { group: stayedIn, other: wentOut,  label: '外出しなかった日は', metricLabel: '調子が低下しやすい' },
       ].forEach(function(pattern) {
         if (pattern.group.length < 5 || pattern.other.length < 5) return;
-        var avg1 = average(pattern.group.map(function(r) { return r.scores[pattern.metric]; }));
-        var avg2 = average(pattern.other.map(function(r) { return r.scores[pattern.metric]; }));
+        var avg1 = average(pattern.group.map(function(r) { return toScore(r); }));
+        var avg2 = average(pattern.other.map(function(r) { return toScore(r); }));
         if (avg1 === null || avg2 === null) return;
         var diff = avg1 - avg2;
         if (diff < 0.5) return;
@@ -604,12 +618,12 @@
       var noSocial  = validRecords.filter(function(r) { return r.evening.socializing === 'なかった'; });
 
       [
-        { group: hadSocial, other: noSocial, label: '交流があった日は', metric: 'mental',        metricLabel: 'メンタルが安定する' },
-        { group: hadSocial, other: noSocial, label: '交流があった日は', metric: 'eveningEnergy', metricLabel: '活力が高い' },
+        { group: hadSocial, other: noSocial, label: '交流があった日は', metricLabel: '調子が良い' },
+        { group: noSocial,  other: hadSocial, label: '交流がなかった日は', metricLabel: '調子が低下しやすい' },
       ].forEach(function(pattern) {
         if (pattern.group.length < 5 || pattern.other.length < 5) return;
-        var avg1 = average(pattern.group.map(function(r) { return r.scores[pattern.metric]; }));
-        var avg2 = average(pattern.other.map(function(r) { return r.scores[pattern.metric]; }));
+        var avg1 = average(pattern.group.map(function(r) { return toScore(r); }));
+        var avg2 = average(pattern.other.map(function(r) { return toScore(r); }));
         if (avg1 === null || avg2 === null) return;
         var diff = avg1 - avg2;
         if (diff < 0.5) return;
@@ -617,18 +631,17 @@
       });
 
       // --- 作業時間 ---
-      var work1to3 = validRecords.filter(function(r) { return getWorkDuration(r) > 0 && getWorkDuration(r) <= 3; });
-      var work4to6 = validRecords.filter(function(r) { return getWorkDuration(r) > 3 && getWorkDuration(r) <= 6; });
-      var work0    = validRecords.filter(function(r) { return getWorkDuration(r) === 0; });
+      var work1to3 = validRecords.filter(function(r) { return r.evening.workHours > 0 && r.evening.workHours <= 3; });
+      var work4to6 = validRecords.filter(function(r) { return r.evening.workHours > 3 && r.evening.workHours <= 6; });
+      var work0    = validRecords.filter(function(r) { return r.evening.workHours === 0; });
 
       [
-        { group: work4to6, other: work0, label: '作業時間4〜6時間の日は', metric: 'eveningEnergy', metricLabel: '活力が高い' },
-        { group: work4to6, other: work0, label: '作業時間4〜6時間の日は', metric: 'mental',        metricLabel: 'メンタルが安定する' },
-        { group: work0,    other: work4to6, label: '作業しなかった日は',   metric: 'eveningEnergy', metricLabel: '活力が低い' },
+        { group: work4to6, other: work0, label: '作業時間4〜6時間の日は', metricLabel: '調子が良い' },
+        { group: work0,    other: work4to6, label: '作業しなかった日は',   metricLabel: '調子が低下しやすい' },
       ].forEach(function(pattern) {
         if (pattern.group.length < 5 || pattern.other.length < 5) return;
-        var avg1 = average(pattern.group.map(function(r) { return r.scores[pattern.metric]; }));
-        var avg2 = average(pattern.other.map(function(r) { return r.scores[pattern.metric]; }));
+        var avg1 = average(pattern.group.map(function(r) { return toScore(r); }));
+        var avg2 = average(pattern.other.map(function(r) { return toScore(r); }));
         if (avg1 === null || avg2 === null) return;
         var diff = avg1 - avg2;
         if (diff < 0.5) return;
