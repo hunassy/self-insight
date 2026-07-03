@@ -179,6 +179,11 @@
       return null;
     }
 
+    // データ不足メッセージ
+    function notEnoughData() {
+      return '<p class="text-muted small mt-2">データが少ないため表示できません（5件以上記録すると表示されます）</p>';
+    }
+
     // スコアの平均を計算する
     function average(arr) {
       if (arr.length === 0) return null;
@@ -252,9 +257,23 @@
       return html;
     }
 
-    // データ不足メッセージ
-    function notEnoughData() {
-      return '<p class="text-muted small mt-2">データが少ないため表示できません（5件以上記録すると表示されます）</p>';
+    // 割合を計算してテキストで返す（0件のときは「-%」を返す）
+    function toPercent(count, total) {
+      if (total === 0) return '-%';
+      return Math.round(count / total * 100) + '%（' + total + '件中' + count + '件）';
+    }
+
+    // 配列項目の出現割合を集計して件数順に返す
+    function countItems(records, field, allItems) {
+      var counts = allItems.map(function(item) {
+        var count = records.filter(function(r) {
+          return (r.evening[field] || []).indexOf(item) !== -1;
+        }).length;
+        return { item: item, count: count };
+      });
+      // 件数が多い順に並べて0件は除外する
+      counts.sort(function(a, b) { return b.count - a.count; });
+      return counts.filter(function(c) { return c.count > 0; });
     }
 
     // ============================
@@ -310,14 +329,25 @@
 
       if (recovered.length > 0) {
         html += '<div class="mb-1">回復した日の行動：</div>';
-        html += '<div class="small">・睡眠6.5時間以上：' + recoveredSleep + '件 / ' + recovered.length + '件</div>';
-        html += '<div class="small">・外出あり：' + recoveredOuting + '件 / ' + recovered.length + '件</div>';
-        html += '<div class="small">・交流あり：' + recoveredSocial + '件 / ' + recovered.length + '件</div>';
-      } else {
-        html += '<div class="text-muted small">回復した日のデータがまだ少ないです</div>';
+        html += '<div class="small">・睡眠6.5時間以上：' + toPercent(recoveredSleep, recovered.length) + '</div>';
+        html += '<div class="small">・外出あり：' + toPercent(recoveredOuting, recovered.length) + '</div>';
+        html += '<div class="small">・交流あり：' + toPercent(recoveredSocial, recovered.length) + '</div>';
       }
 
       html += '</div>';
+
+      // 回復した日のdone集計を追加する
+      if (recovered.length > 0) {
+        var doneItems = ['作業できた', '外出できた', '人と話せた', '家事できた', '趣味ができた', 'ゆっくり休めた'];
+        var doneCounts = countItems(recovered.map(function(d) { return d.next; }), 'done', doneItems);
+        if (doneCounts.length > 0) {
+          html += '<div class="mt-2 mb-1">回復した日によく記録されたこと：</div>';
+          doneCounts.forEach(function(c) {
+            html += '<div class="small">・' + c.item + '：' + toPercent(c.count, recovered.length) + '</div>';
+          });
+        }
+      }
+
       container.innerHTML = html;
     }
 
@@ -352,12 +382,23 @@
 
       var html = '<div class="mt-2">';
       html += '<div class="small text-muted mb-2">活力・メンタルが低下した日（' + badDays.length + '件）の行動：</div>';
-      html += '<div class="small">・睡眠6時間未満：' + shortSleep + '件 / ' + badDays.length + '件</div>';
-      html += '<div class="small">・外出なし：' + noOuting + '件 / ' + badDays.length + '件</div>';
-      html += '<div class="small">・交流なし：' + noSocial + '件 / ' + badDays.length + '件</div>';
-      html += '<div class="small">・作業7時間以上：' + longWork + '件 / ' + badDays.length + '件</div>';
-      html += '<div class="small">・作業なし：' + noWork + '件 / ' + badDays.length + '件</div>';
+      html += '<div class="small">・睡眠6時間未満：' + toPercent(shortSleep, badDays.length) + '</div>';
+      html += '<div class="small">・外出なし：' + toPercent(noOuting, badDays.length) + '</div>';
+      html += '<div class="small">・交流なし：' + toPercent(noSocial, badDays.length) + '</div>';
+      html += '<div class="small">・作業7時間以上：' + toPercent(longWork, badDays.length) + '</div>';
+      html += '<div class="small">・作業なし：' + toPercent(noWork, badDays.length) + '</div>';
+
       html += '</div>';
+
+      // つらい日のhard集計を追加する
+      var hardItems = ['疲れた', '不安が強い', '落ち込み', '人間関係', '睡眠不足', '体調不良', '仕事のストレス'];
+      var hardCounts = countItems(badDays, 'hard', hardItems);
+      if (hardCounts.length > 0) {
+        html += '<div class="mt-2 mb-1">つらい日に多かったこと：</div>';
+        hardCounts.forEach(function(c) {
+          html += '<div class="small">・' + c.item + '：' + toPercent(c.count, badDays.length) + '</div>';
+        });
+      }
 
       container.innerHTML = html;
     }
@@ -368,17 +409,16 @@
 
     function showDetailStable(validRecords) {
       var container = document.getElementById('detail-stable');
+      if (!container) return;
 
       if (validRecords.length < 5) {
         container.innerHTML = notEnoughData();
         return;
       }
 
-      // 安定した日：体調・メンタル・活力がすべてプラスの日
+      // 安定した日：dayRatingが「good」の日
       var stableDays = validRecords.filter(function(r) {
-        return r.scores.physical >= 0 &&
-               r.scores.mental >= 0 &&
-               r.scores.eveningEnergy > 0;
+        return r.evening.dayRating === 'good';
       });
 
       if (stableDays.length < 5) {
@@ -399,12 +439,23 @@
       html += '<div class="small text-muted mb-2">体調・メンタル・活力が安定した日（' + stableDays.length + '件）：</div>';
       html += '<div class="small">・平均睡眠時間：' + (avgSleep !== null ? avgSleep.toFixed(1) : '-') + '時間</div>';
       html += '<div class="small">・平均作業時間：' + (avgWork  !== null ? avgWork.toFixed(1)  : '-') + '時間</div>';
-      html += '<div class="small">・外出あり：' + outing + '件 / ' + stableDays.length + '件</div>';
-      html += '<div class="small">・交流あり：' + social + '件 / ' + stableDays.length + '件</div>';
-      html += '<div class="small">・睡眠7時間以上：' + sleep7 + '件 / ' + stableDays.length + '件</div>';
-      html += '<div class="small">・作業3〜4時間：' + work3to4 + '件 / ' + stableDays.length + '件</div>';
+      html += '<div class="small">・外出あり：' + toPercent(outing, stableDays.length) + '</div>';
+      html += '<div class="small">・交流あり：' + toPercent(social, stableDays.length) + '</div>';
+      html += '<div class="small">・睡眠7時間以上：' + toPercent(sleep7, stableDays.length) + '</div>';
+      html += '<div class="small">・作業3〜4時間：' + toPercent(work3to4, stableDays.length) + '</div>';
+
       html += '</div>';
 
+      // 良い日のdone集計を追加する
+      var doneItems = ['作業できた', '外出できた', '人と話せた', '家事できた', '趣味ができた', 'ゆっくり休めた'];
+      var doneCounts = countItems(stableDays, 'done', doneItems);
+      if (doneCounts.length > 0) {
+        html += '<div class="mt-2 mb-1">良い日によく記録されたこと：</div>';
+        doneCounts.forEach(function(c) {
+          html += '<div class="small">・' + c.item + '：' + toPercent(c.count, stableDays.length) + '</div>';
+        });
+      }
+      
       container.innerHTML = html;
     }
 

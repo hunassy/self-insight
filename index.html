@@ -492,9 +492,12 @@
       var data = localStorage.getItem(STORAGE_KEY);
       var records = data ? JSON.parse(data) : [];
 
-      // 朝・夜両方そろっているレコードだけ使う
+      // dayRatingがあるレコードだけ使う
       var valid = records.filter(function(r) {
-        return r.morning && r.evening;
+        return r.evening &&
+          (r.evening.dayRating === 'good' ||
+           r.evening.dayRating === 'normal' ||
+           r.evening.dayRating === 'bad');
       });
 
       // データが10件未満の場合
@@ -513,26 +516,34 @@
         };
       }
 
-      // 外出した日の翌日スコアを計算する
+      // dayRatingを数値に変換するヘルパー関数
+      function toScore(r) {
+        if (r.evening.dayRating === 'good')   return 1;
+        if (r.evening.dayRating === 'normal') return 0;
+        if (r.evening.dayRating === 'bad')    return -1;
+        return 0;
+      }
+
+      // 外出した日としなかった日のdayRating平均を計算する
       var outingDays   = valid.filter(function(r) { return r.evening.outing === 'した'; });
       var noOutingDays = valid.filter(function(r) { return r.evening.outing === 'しなかった'; });
 
       var outingAvg   = outingDays.length > 0
-        ? outingDays.reduce(function(sum, r) { return sum + (r.scores.eveningEnergy || 0); }, 0) / outingDays.length
+        ? outingDays.reduce(function(sum, r) { return sum + toScore(r); }, 0) / outingDays.length
         : null;
       var noOutingAvg = noOutingDays.length > 0
-        ? noOutingDays.reduce(function(sum, r) { return sum + (r.scores.eveningEnergy || 0); }, 0) / noOutingDays.length
+        ? noOutingDays.reduce(function(sum, r) { return sum + toScore(r); }, 0) / noOutingDays.length
         : null;
 
-      // 交流した日のスコアを計算する
+      // 交流した日としなかった日のdayRating平均を計算する
       var socialDays   = valid.filter(function(r) { return r.evening.socializing === 'あった'; });
       var noSocialDays = valid.filter(function(r) { return r.evening.socializing === 'なかった'; });
 
       var socialAvg   = socialDays.length > 0
-        ? socialDays.reduce(function(sum, r) { return sum + (r.scores.eveningEnergy || 0); }, 0) / socialDays.length
+        ? socialDays.reduce(function(sum, r) { return sum + toScore(r); }, 0) / socialDays.length
         : null;
       var noSocialAvg = noSocialDays.length > 0
-        ? noSocialDays.reduce(function(sum, r) { return sum + (r.scores.eveningEnergy || 0); }, 0) / noSocialDays.length
+        ? noSocialDays.reduce(function(sum, r) { return sum + toScore(r); }, 0) / noSocialDays.length
         : null;
 
       // 表示するメッセージを集める
