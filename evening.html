@@ -805,6 +805,12 @@
           // AI総評を生成して保存する
           // ============================
 
+          // AI総評の完了（成功・失敗どちらでも）を待つためのPromise
+          // 画面遷移をこのPromiseの完了後に行うことで、
+          // 生成が終わる前に遷移してしまう問題を防ぐ
+          var summaryPromise;
+
+
           // 朝の記録があるときだけ実行する
           if (todayRecord && todayRecord.morning) {
 
@@ -883,7 +889,7 @@
 
             // --- AIを呼び出して文章を生成する ---
 
-            fetch('https://self-insight-api.gudelove0919.workers.dev/api/summary', {
+            summaryPromise = fetch('https://self-insight-api.gudelove0919.workers.dev/api/summary', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json'
@@ -925,14 +931,19 @@
             .catch(function(error) {
               console.log('AI総評の生成をスキップしました:', error);
             });
+            } else {
+              // 朝の記録がない日はAI総評を作らないので、即完了扱いにする
+              summaryPromise = Promise.resolve();
+            } // AI総評ここまで
 
-          } // AI総評ここまで
-          
-          // 2秒後に記録一覧へ遷移する（今日の日付を渡す）
-          setTimeout(function() {
-            window.location.href = 'records.html?date=' + record.date;
-          }, 2000);
-        });
+            // AI総評の処理が終わってから（成功でも失敗でも）
+            // 2秒後に記録一覧へ遷移する（今日の日付を渡す）
+            summaryPromise.finally(function() {
+              setTimeout(function() {
+                window.location.href = 'records.html?date=' + record.date;
+              }, 2000);
+            });
+          });
     });
   </script>
 
