@@ -118,12 +118,21 @@
         </div>
 
         <!-- 曜日別の作業時間 -->
-        <div class="pb-2 mb-2">
+        <div class="border-bottom pb-2 mb-2">
           <div class="fw-bold small mb-1" style="cursor:pointer;"
             onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
             ▶ 曜日別の作業時間
           </div>
           <div style="display:none;" id="detail-weekday"></div>
+        </div>
+
+        <!-- 開始時刻帯の分析 -->
+        <div class="pb-2 mb-2">
+          <div class="fw-bold small mb-1" style="cursor:pointer;"
+            onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
+            ▶ 開始時刻帯の分析
+          </div>
+          <div style="display:none;" id="detail-start-time"></div>
         </div>
       </div>
     </div>
@@ -548,6 +557,74 @@
     }
 
     // ============================
+    // 開始時刻帯の分析
+    // ============================
+
+    // 開始時刻（分換算）から時刻帯のラベルを返す
+    function getStartTimeZoneLabel(minutes) {
+      if (minutes === null) return null;
+      var hour = minutes / 60;
+      if (hour >= 6  && hour < 8)  return '6〜8時';
+      if (hour >= 8  && hour < 10) return '8〜10時';
+      if (hour >= 10 && hour < 12) return '10〜12時';
+      return '12時以降';
+    }
+
+    function showDetailStartTime(validRecords) {
+      var container = document.getElementById('detail-start-time');
+      if (!container) return;
+
+      // 開始時刻が記録されている記録だけ絞り込む
+      var recordsWithStartTime = validRecords.filter(function(r) {
+        return r.evening.workStartTime;
+      });
+
+      if (recordsWithStartTime.length < 5) {
+        container.innerHTML = notEnoughData();
+        return;
+      }
+
+      // 時刻帯の並び順
+      var zoneOrder = ['6〜8時', '8〜10時', '10〜12時', '12時以降'];
+
+      var html = '<table class="table table-sm mt-2">';
+      html += '<thead><tr>';
+      html += '<th class="text-muted fw-normal small">開始時刻帯</th>';
+      html += '<th class="text-muted fw-normal small">件数</th>';
+      html += '<th class="text-muted fw-normal small">平均作業時間</th>';
+      html += '</tr></thead><tbody>';
+
+      zoneOrder.forEach(function(zoneLabel) {
+
+        // この時刻帯のレコードだけ絞り込む
+        var zoneRecords = recordsWithStartTime.filter(function(r) {
+          var minutes = timeStringToMinutes(r.evening.workStartTime);
+          return getStartTimeZoneLabel(minutes) === zoneLabel;
+        });
+
+        if (zoneRecords.length === 0) {
+          html += '<tr>';
+          html += '<td class="small">' + zoneLabel + '</td>';
+          html += '<td class="small text-muted">0件</td>';
+          html += '<td class="small">-</td>';
+          html += '</tr>';
+          return;
+        }
+
+        var avgDuration = average(zoneRecords.map(function(r) { return getWorkDuration(r); }));
+
+        html += '<tr>';
+        html += '<td class="small">' + zoneLabel + '</td>';
+        html += '<td class="small text-muted">' + zoneRecords.length + '件</td>';
+        html += '<td class="small">' + (avgDuration !== null ? avgDuration.toFixed(1) + '時間' : '-') + '</td>';
+        html += '</tr>';
+      });
+
+      html += '</tbody></table>';
+      container.innerHTML = html;
+    }
+
+    // ============================
     // 個別分析の表示
     // ============================
 
@@ -927,6 +1004,7 @@
     showDetailTrigger(validRecords);
     showDetailStable(validRecords);
     showDetailWeekday(validRecords);
+    showDetailStartTime(validRecords);
     showDetailSleep(validRecords);
     showDetailOuting(validRecords);
     showDetailSocial(validRecords);
