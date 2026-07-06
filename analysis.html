@@ -116,6 +116,15 @@
           </div>
           <div style="display:none;" id="detail-stable"></div>
         </div>
+
+        <!-- 曜日別の作業時間 -->
+        <div class="pb-2 mb-2">
+          <div class="fw-bold small mb-1" style="cursor:pointer;"
+            onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
+            ▶ 曜日別の作業時間
+          </div>
+          <div style="display:none;" id="detail-weekday"></div>
+        </div>
       </div>
     </div>
 
@@ -452,6 +461,89 @@
         });
       }
       
+      container.innerHTML = html;
+    }
+
+    // ============================
+    // 曜日別の作業時間分析
+    // ============================
+
+    // 日付文字列（例：2026-06-05）から曜日名を返す
+    function getDayOfWeekLabel(dateString) {
+      var d = new Date(dateString);
+      var labels = ['日', '月', '火', '水', '木', '金', '土'];
+      return labels[d.getDay()];
+    }
+
+    // 時刻文字列（"09:30"）を分に変換する（平均計算用）
+    function timeStringToMinutes(timeString) {
+      if (!timeString) return null;
+      var parts = timeString.split(':');
+      return Number(parts[0]) * 60 + Number(parts[1]);
+    }
+
+    // 分を時刻文字列（"09:30"）に戻す
+    function minutesToTimeString(minutes) {
+      var h = Math.floor(minutes / 60);
+      var m = Math.round(minutes % 60);
+      return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+    }
+
+    function showDetailWeekday(validRecords) {
+      var container = document.getElementById('detail-weekday');
+      if (!container) return;
+
+      if (validRecords.length < 5) {
+        container.innerHTML = notEnoughData();
+        return;
+      }
+
+      // 曜日の並び順（月曜始まりにする）
+      var weekdayOrder = ['月', '火', '水', '木', '金', '土', '日'];
+
+      var html = '<table class="table table-sm mt-2">';
+      html += '<thead><tr>';
+      html += '<th class="text-muted fw-normal small">曜日</th>';
+      html += '<th class="text-muted fw-normal small">件数</th>';
+      html += '<th class="text-muted fw-normal small">平均開始時刻</th>';
+      html += '<th class="text-muted fw-normal small">平均作業時間</th>';
+      html += '</tr></thead><tbody>';
+
+      weekdayOrder.forEach(function(dayLabel) {
+
+        // この曜日のレコードだけ絞り込む
+        var dayRecords = validRecords.filter(function(r) {
+          return getDayOfWeekLabel(r.date) === dayLabel;
+        });
+
+        if (dayRecords.length === 0) {
+          html += '<tr>';
+          html += '<td class="small">' + dayLabel + '曜日</td>';
+          html += '<td class="small text-muted">0件</td>';
+          html += '<td class="small">-</td>';
+          html += '<td class="small">-</td>';
+          html += '</tr>';
+          return;
+        }
+
+        // 開始時刻の平均を計算する（未記録は除外する）
+        var startMinutesList = dayRecords
+          .map(function(r) { return timeStringToMinutes(r.evening.workStartTime); })
+          .filter(function(m) { return m !== null; });
+        var avgStartMinutes = average(startMinutesList);
+
+        // 作業時間の平均を計算する
+        var avgDuration = average(dayRecords.map(function(r) { return getWorkDuration(r); }));
+
+        html += '<tr>';
+        html += '<td class="small">' + dayLabel + '曜日</td>';
+        html += '<td class="small text-muted">' + dayRecords.length + '件</td>';
+        html += '<td class="small">' + (avgStartMinutes !== null ? minutesToTimeString(avgStartMinutes) : '-') + '</td>';
+        html += '<td class="small">' + (avgDuration !== null ? avgDuration.toFixed(1) + '時間' : '-') + '</td>';
+        html += '</tr>';
+      });
+
+      html += '</tbody></table>';
       container.innerHTML = html;
     }
 
@@ -834,6 +926,7 @@
     showDetailRecovery(validRecords);
     showDetailTrigger(validRecords);
     showDetailStable(validRecords);
+    showDetailWeekday(validRecords);
     showDetailSleep(validRecords);
     showDetailOuting(validRecords);
     showDetailSocial(validRecords);
