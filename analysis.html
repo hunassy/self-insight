@@ -224,10 +224,6 @@
       });
     }
 
-    // ============================
-    // 個別分析の表示
-    // ============================
-
     // グループごとのスコア平均を表示するHTML
     function renderDetailTable(groups) {
       var html = '<table class="table table-sm mt-2">';
@@ -460,8 +456,10 @@
     }
 
     // ============================
-    // 天気と状態の分析
+    // 個別分析の表示
     // ============================
+
+    // 天気と状態の分析
 
     function showDetailWeather(validRecords) {
       var container = document.getElementById('detail-weather');
@@ -498,9 +496,7 @@
       container.innerHTML = renderDetailTable(groups);
     }
 
-    // ============================
     // 気圧と状態の分析
-    // ============================
 
     function showDetailPressure(validRecords) {
       var container = document.getElementById('detail-pressure');
