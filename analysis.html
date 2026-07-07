@@ -127,12 +127,21 @@
         </div>
 
         <!-- 開始時刻帯の分析 -->
-        <div class="pb-2 mb-2">
+        <div class="border-bottom pb-2 mb-2">
           <div class="fw-bold small mb-1" style="cursor:pointer;"
             onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
             ▶ 開始時刻帯の分析
           </div>
           <div style="display:none;" id="detail-start-time"></div>
+        </div>
+
+        <!-- コンディション別の作業傾向 -->
+        <div class="pb-2 mb-2">
+          <div class="fw-bold small mb-1" style="cursor:pointer;"
+            onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
+            ▶ コンディション別の作業傾向
+          </div>
+          <div style="display:none;" id="detail-condition"></div>
         </div>
       </div>
     </div>
@@ -625,11 +634,81 @@
     }
 
     // ============================
+    // コンディション別の作業傾向
+    // ============================
+
+    function showDetailCondition(validRecords) {
+      var container = document.getElementById('detail-condition');
+      if (!container) return;
+
+      // 開始時刻が記録されている記録だけ絞り込む
+      var recordsWithStartTime = validRecords.filter(function(r) {
+        return r.evening.workStartTime;
+      });
+
+      if (recordsWithStartTime.length < 5) {
+        container.innerHTML = notEnoughData();
+        return;
+      }
+
+      // dayRatingの並び順とラベル
+      var ratingGroups = [
+        { key: 'good',   label: '良い日' },
+        { key: 'normal', label: '普通の日' },
+        { key: 'bad',    label: 'つらい日' }
+      ];
+
+      var html = '<table class="table table-sm mt-2">';
+      html += '<thead><tr>';
+      html += '<th class="text-muted fw-normal small">評価</th>';
+      html += '<th class="text-muted fw-normal small">件数</th>';
+      html += '<th class="text-muted fw-normal small">平均開始時刻</th>';
+      html += '<th class="text-muted fw-normal small">平均作業時間</th>';
+      html += '</tr></thead><tbody>';
+
+      ratingGroups.forEach(function(group) {
+
+        // この評価のレコードだけ絞り込む
+        var groupRecords = recordsWithStartTime.filter(function(r) {
+          return r.evening.dayRating === group.key;
+        });
+
+        if (groupRecords.length === 0) {
+          html += '<tr>';
+          html += '<td class="small">' + group.label + '</td>';
+          html += '<td class="small text-muted">0件</td>';
+          html += '<td class="small">-</td>';
+          html += '<td class="small">-</td>';
+          html += '</tr>';
+          return;
+        }
+
+        // 件数が少ない場合も、計算はするが「-」にはせずそのまま表示する
+        // （懸念点で説明した通り、枠組みは常に見えるようにする）
+        var startMinutesList = groupRecords
+          .map(function(r) { return timeStringToMinutes(r.evening.workStartTime); })
+          .filter(function(m) { return m !== null; });
+        var avgStartMinutes = average(startMinutesList);
+
+        var avgDuration = average(groupRecords.map(function(r) { return getWorkDuration(r); }));
+
+        html += '<tr>';
+        html += '<td class="small">' + group.label + '</td>';
+        html += '<td class="small text-muted">' + groupRecords.length + '件</td>';
+        html += '<td class="small">' + (avgStartMinutes !== null ? minutesToTimeString(avgStartMinutes) : '-') + '</td>';
+        html += '<td class="small">' + (avgDuration !== null ? avgDuration.toFixed(1) + '時間' : '-') + '</td>';
+        html += '</tr>';
+      });
+
+      html += '</tbody></table>';
+      container.innerHTML = html;
+    }
+
+    // ============================
     // 個別分析の表示
     // ============================
 
     // 天気と状態の分析
-
     function showDetailWeather(validRecords) {
       var container = document.getElementById('detail-weather');
       if (!container) return;
@@ -666,7 +745,6 @@
     }
 
     // 気圧と状態の分析
-
     function showDetailPressure(validRecords) {
       var container = document.getElementById('detail-pressure');
       if (!container) return;
@@ -1005,6 +1083,7 @@
     showDetailStable(validRecords);
     showDetailWeekday(validRecords);
     showDetailStartTime(validRecords);
+    showDetailCondition(validRecords);
     showDetailSleep(validRecords);
     showDetailOuting(validRecords);
     showDetailSocial(validRecords);
