@@ -206,6 +206,15 @@
       return null;
     }
 
+    // dayRatingを数値に変換する共通関数
+    // good（良い日）=1点、normal（普通の日）=0点、bad（つらい日）=-1点
+    function dayRatingToScore(r) {
+      if (r.evening.dayRating === 'good')   return 1;
+      if (r.evening.dayRating === 'normal') return 0;
+      if (r.evening.dayRating === 'bad')    return -1;
+      return 0;
+    }
+
     // データ不足メッセージ
     function notEnoughData() {
       return '<p class="text-muted small mt-2">データが少ないため表示できません（5件以上記録すると表示されます）</p>';
@@ -317,8 +326,8 @@
         var today = sorted[i];
         var tomorrow = sorted[i + 1];
 
-        // 前日のスコアが低い（体調かメンタルがマイナス）
-        var isBadDay = today.scores.physical < 0 || today.scores.mental < 0;
+        // 前日が「つらい日」だったか（dayRating基準）
+        var isBadDay = today.evening.dayRating === 'bad';
         if (!isBadDay) continue;
 
         // 翌日が連続した日付かチェック
@@ -338,9 +347,13 @@
         return;
       }
 
-      // 翌日に回復した日（eveningEnergyが上昇）としなかった日に分ける
-      var recovered    = recoveryDays.filter(function(d) { return d.next.scores.eveningEnergy > 0; });
-      var notRecovered = recoveryDays.filter(function(d) { return d.next.scores.eveningEnergy <= 0; });
+      // 翌日に回復した日（良い日 or 普通の日になった）としなかった日（つらい日のまま）に分ける
+      var recovered = recoveryDays.filter(function(d) {
+        return d.next.evening.dayRating === 'good' || d.next.evening.dayRating === 'normal';
+      });
+      var notRecovered = recoveryDays.filter(function(d) { 
+        return d.next.evening.dayRating === 'bad'; 
+      });
 
       // 回復した日の行動パターンを集計する
       var recoveredOuting   = recovered.filter(function(d) { return d.next.evening.outing === 'した'; }).length;
@@ -386,9 +399,9 @@
         return;
       }
 
-      // スコアが低い日を「悪化した日」とする
+      // その日の総合評価が「つらい日」だった日を「悪化した日」とする
       var badDays = validRecords.filter(function(r) {
-        return r.scores.eveningEnergy < 0 || r.scores.mental < 0;
+        return r.evening.dayRating === 'bad';
       });
 
       if (badDays.length < 5) {
@@ -858,13 +871,8 @@
 
       var results = [];
 
-      // dayRatingを数値に変換するヘルパー関数
-      function toScore(r) {
-        if (r.evening.dayRating === 'good')   return 1;
-        if (r.evening.dayRating === 'normal') return 0;
-        if (r.evening.dayRating === 'bad')    return -1;
-        return 0;
-      }
+      // dayRatingを数値に変換する（共通関数を使う）
+      var toScore = dayRatingToScore;
 
       //console.table(validRecords.map(function(r) {return {date: r.date,dayRating: r.evening.dayRating,score: toScore(r)};}));
 
@@ -1050,14 +1058,14 @@
       }
       html += '</div>';
 
-      // 活力の比較
-      var thisWeekEnergy = average(thisWeek.map(function(r) { return r.scores.eveningEnergy; }));
-      var lastWeekEnergy = average(lastWeek.map(function(r) { return r.scores.eveningEnergy; }));
+      // 調子の比較（dayRating基準：良い日=1点、普通の日=0点、つらい日=-1点）
+      var thisWeekEnergy = average(thisWeek.map(function(r) { return dayRatingToScore(r); }));
+      var lastWeekEnergy = average(lastWeek.map(function(r) { return dayRatingToScore(r); }));
       html += '<div class="mb-2">';
-      html += '<div class="small text-muted">活力スコア（平均）</div>';
+      html += '<div class="small text-muted">コンディション（平均）</div>';
       if (lastWeek.length > 0 && lastWeekEnergy !== null) {
         var energyDiff = thisWeekEnergy - lastWeekEnergy;
-        var energyLabel = energyDiff > 0.3 ? '上昇' : energyDiff < -0.3 ? '低下' : 'ほぼ変化なし';
+        var energyLabel = energyDiff > 0.15 ? '上昇' : energyDiff < -0.15 ? '低下' : 'ほぼ変化なし';
         html += '<div>' + lastWeekEnergy.toFixed(1) + ' → ' + thisWeekEnergy.toFixed(1) + '　(' + energyLabel + ')</div>';
       } else {
         html += '<div>' + (thisWeekEnergy !== null ? thisWeekEnergy.toFixed(1) : '-') + '</div>';

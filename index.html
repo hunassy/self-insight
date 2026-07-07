@@ -472,6 +472,18 @@
     }
 
     // ============================
+    // dayRatingを数値に変換する関数
+    // good（良い日）=1点、normal（普通の日）=0点、bad（つらい日）=-1点
+    // ============================
+    function dayRatingToScore(r) {
+      if (!r.evening) return 0;
+      if (r.evening.dayRating === 'good')   return 1;
+      if (r.evening.dayRating === 'normal') return 0;
+      if (r.evening.dayRating === 'bad')    return -1;
+      return 0;
+    }
+
+    // ============================
     // 今日のヒント：メッセージ設定
     // ここを書き換えるだけで文言が変わります
     // ============================
@@ -524,36 +536,36 @@
         return 0;
       }
 
-      // 外出した日としなかった日のdayRating平均を計算する
+      // 外出した日の調子スコアを計算する（dayRating基準）
       var outingDays   = valid.filter(function(r) { return r.evening.outing === 'した'; });
       var noOutingDays = valid.filter(function(r) { return r.evening.outing === 'しなかった'; });
 
       var outingAvg   = outingDays.length > 0
-        ? outingDays.reduce(function(sum, r) { return sum + toScore(r); }, 0) / outingDays.length
+        ? outingDays.reduce(function(sum, r) { return sum + dayRatingToScore(r); }, 0) / outingDays.length
         : null;
       var noOutingAvg = noOutingDays.length > 0
-        ? noOutingDays.reduce(function(sum, r) { return sum + toScore(r); }, 0) / noOutingDays.length
+        ? noOutingDays.reduce(function(sum, r) { return sum + dayRatingToScore(r); }, 0) / noOutingDays.length
         : null;
 
-      // 交流した日としなかった日のdayRating平均を計算する
+      // 交流した日の調子スコアを計算する（dayRating基準）
       var socialDays   = valid.filter(function(r) { return r.evening.socializing === 'あった'; });
       var noSocialDays = valid.filter(function(r) { return r.evening.socializing === 'なかった'; });
 
       var socialAvg   = socialDays.length > 0
-        ? socialDays.reduce(function(sum, r) { return sum + toScore(r); }, 0) / socialDays.length
+        ? socialDays.reduce(function(sum, r) { return sum + dayRatingToScore(r); }, 0) / socialDays.length
         : null;
       var noSocialAvg = noSocialDays.length > 0
-        ? noSocialDays.reduce(function(sum, r) { return sum + toScore(r); }, 0) / noSocialDays.length
+        ? noSocialDays.reduce(function(sum, r) { return sum + dayRatingToScore(r); }, 0) / noSocialDays.length
         : null;
 
       // 表示するメッセージを集める
       var lines = [];
 
-      if (outingAvg !== null && noOutingAvg !== null && (outingAvg - noOutingAvg) >= 0.5) {
+      if (outingAvg !== null && noOutingAvg !== null && (outingAvg - noOutingAvg) >= 0.25) {
         lines.push(HINT_MESSAGES.outingEffect);
       }
 
-      if (socialAvg !== null && noSocialAvg !== null && (socialAvg - noSocialAvg) >= 0.5) {
+      if (socialAvg !== null && noSocialAvg !== null && (socialAvg - noSocialAvg) >= 0.25) {
         lines.push(HINT_MESSAGES.socialEffect);
       }
 
