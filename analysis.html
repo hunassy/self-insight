@@ -108,6 +108,43 @@
       margin-top: 2px;
     }
 
+    /* 7日間の傾向：「調子」だけを目立たせるカード */
+    .weekly-card-summary {
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 14px 16px;
+      margin-bottom: 8px;
+      box-shadow: 0 2px 8px rgba(107, 79, 94, 0.18);
+    }
+
+    .weekly-card-summary .weekly-card-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--color-primary-soft);
+      font-size: 16px;
+    }
+
+    .weekly-card-summary .weekly-card-value {
+      font-size: 1.75rem;
+    }
+
+    /* 7日間の傾向：体調・メンタル・活力を3列に並べる枠 */
+    .weekly-card-grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    /* 7日間の傾向：3列時の小さめ表示（調子の内訳であることを示す） */
+    .weekly-card-sub .weekly-card-value {
+      font-size: 1.125rem;
+    }
+
+    .weekly-card-sub .weekly-card-label {
+      font-size: 0.6875rem;
+    }
+
   </style>
 </head>
 <body>
@@ -1173,9 +1210,25 @@
     // ============================
     // 7日間の傾向：カード1枚分のHTMLを作る
     // ============================
-    function weeklyCard(iconClass, label, valueText, diffText, isFull) {
+    function weeklyCard(iconClass, label, valueText, diffText, isFull, extraClass) {
       var fullClass = isFull ? ' weekly-card-full' : '';
-      var html = '<div class="weekly-card' + fullClass + '">';
+      var extra = extraClass ? ' ' + extraClass : '';
+      var html = '<div class="weekly-card' + fullClass + extra + '">';
+      html += '<div class="d-flex align-items-center gap-2">';
+      html += '<div class="weekly-card-icon"><i class="bi ' + iconClass + '"></i></div>';
+      html += '<span class="weekly-card-label">' + label + '</span>';
+      html += '</div>';
+      html += '<div class="weekly-card-value">' + valueText + '</div>';
+      html += '<div class="weekly-card-diff">' + diffText + '</div>';
+      html += '</div>';
+      return html;
+    }
+
+    // ============================
+    // 7日間の傾向：「調子」専用の目立つカード
+    // ============================
+    function weeklySummaryCard(iconClass, label, valueText, diffText) {
+      var html = '<div class="weekly-card-summary">';
       html += '<div class="d-flex align-items-center gap-2">';
       html += '<div class="weekly-card-icon"><i class="bi ' + iconClass + '"></i></div>';
       html += '<span class="weekly-card-label">' + label + '</span>';
@@ -1277,31 +1330,37 @@
 
       // ---- コンディション ----
       html += '<p class="weekly-group-label">コンディション</p>';
-      html += '<div class="weekly-card-grid">';
 
+      // 「調子」は総合値なので、単独の目立つカードにする
       var thisDayRating = average(thisWeek.map(function(r) { return dayRatingToScore(r); }));
       var lastDayRating = average(lastWeek.map(function(r) { return dayRatingToScore(r); }));
-      html += weeklyCard('bi-emoji-neutral', '調子',
+      html += weeklySummaryCard('bi-emoji-neutral', '調子',
         thisDayRating.toFixed(1),
         formatScoreDiff(thisDayRating, lastDayRating, hasLastWeek));
+
+      // 体調・メンタル・活力は「調子の内訳」として3列の小さめカードで並べる
+      html += '<div class="weekly-card-grid-3">';
 
       var thisPhysical = averageDefined(thisWeek.map(function(r) { return r.scores ? r.scores.physical : undefined; }));
       var lastPhysical = averageDefined(lastWeek.map(function(r) { return r.scores ? r.scores.physical : undefined; }));
       html += weeklyCard('bi-heart-pulse', '体調',
         thisPhysical !== null ? thisPhysical.toFixed(1) : '-',
-        formatScoreDiff(thisPhysical, lastPhysical, hasLastWeek));
+        formatScoreDiff(thisPhysical, lastPhysical, hasLastWeek),
+        false, 'weekly-card-sub');
 
       var thisMental = averageDefined(thisWeek.map(function(r) { return r.scores ? r.scores.mental : undefined; }));
       var lastMental = averageDefined(lastWeek.map(function(r) { return r.scores ? r.scores.mental : undefined; }));
       html += weeklyCard('bi-cloud', 'メンタル',
         thisMental !== null ? thisMental.toFixed(1) : '-',
-        formatScoreDiff(thisMental, lastMental, hasLastWeek));
+        formatScoreDiff(thisMental, lastMental, hasLastWeek),
+        false, 'weekly-card-sub');
 
       var thisEnergy = averageDefined(thisWeek.map(function(r) { return r.scores ? r.scores.eveningEnergy : undefined; }));
       var lastEnergy = averageDefined(lastWeek.map(function(r) { return r.scores ? r.scores.eveningEnergy : undefined; }));
       html += weeklyCard('bi-lightning-charge', '活力',
         thisEnergy !== null ? thisEnergy.toFixed(1) : '-',
-        formatScoreDiff(thisEnergy, lastEnergy, hasLastWeek));
+        formatScoreDiff(thisEnergy, lastEnergy, hasLastWeek),
+        false, 'weekly-card-sub');
 
       html += '</div>';
 
