@@ -388,21 +388,21 @@
       </div>
     </div>
 
-    <!-- 今日の作業 -->
+    <!-- 今日の活動 -->
     <div class="card mb-3">
       <div class="card-body">
-        <h2 class="fs-6 fw-bold mb-3">今日の作業</h2>
+        <h2 class="fs-6 fw-bold mb-3">今日の活動記録</h2>
 
         <div class="mb-3">
-          <label for="work-start-time" class="form-label">開始時刻</label>
-          <select id="work-start-time" class="form-select" style="width: 140px;">
+          <label for="activity-start-time" class="form-label">開始時刻</label>
+          <select id="activity-start-time" class="form-select" style="width: 140px;">
             <option value="">未記録</option>
           </select>
         </div>
 
         <div>
-          <label for="work-duration" class="form-label">作業時間</label>
-          <select id="work-duration" class="form-select" style="width: 140px;">
+          <label for="activity-duration" class="form-label">活動時間</label>
+          <select id="activity-duration" class="form-select" style="width: 140px;">
             <option value="">未記録</option>
           </select>
         </div>
@@ -414,7 +414,7 @@
       <div class="card-body">
         <h2 class="fs-6 fw-bold mb-3">今日できたこと <span class="text-muted fw-normal">（複数選択）</span></h2>
         <div class="sign-btn">
-          <span><input type="checkbox" id="d1" name="done[]" value="作業できた"><label for="d1">作業できた</label></span>
+          <span><input type="checkbox" id="d1" name="done[]" value="活動できた"><label for="d1">活動できた</label></span>
           <span><input type="checkbox" id="d2" name="done[]" value="外出できた"><label for="d2">外出できた</label></span>
           <span><input type="checkbox" id="d3" name="done[]" value="人と話せた"><label for="d3">人と話せた</label></span>
           <span><input type="checkbox" id="d4" name="done[]" value="家事できた"><label for="d4">家事できた</label></span>
@@ -490,12 +490,12 @@
     }
 
     // ============================
-    // 開始時刻・作業時間のプルダウンを作る
+    // 開始時刻・活動時間のプルダウンを作る
     // ============================
 
     // 開始時刻（06:00〜23:30、30分刻み）
     function populateWorkStartTimeOptions() {
-      var select = document.getElementById('work-start-time');
+      var select = document.getElementById('activity-start-time');
       var hour = 6;
       var minute = 0;
       while (hour < 24) {
@@ -514,9 +514,9 @@
       }
     }
 
-    // 作業時間（0〜12時間、0.5時間刻み）
-    function populateWorkDurationOptions() {
-      var select = document.getElementById('work-duration');
+    // 活動時間（0〜12時間、0.5時間刻み）
+    function populateActivityDurationOptions() {
+      var select = document.getElementById('activity-duration');
       for (var i = 0; i <= 24; i++) {
         var hours = i * 0.5;
         var option = document.createElement('option');
@@ -527,7 +527,7 @@
     }
 
     populateWorkStartTimeOptions();
-    populateWorkDurationOptions();
+    populateActivityDurationOptions();
 
     // ============================
     // スコア計算の関数
@@ -727,8 +727,8 @@
         body: getCheckedValues('body[]'),
         mental: getCheckedValues('mental[]'),
         vitality: getRadioValue('vitality'),
-        workStartTime: document.getElementById('work-start-time').value,
-        workDuration: Number(document.getElementById('work-duration').value) || 0,
+        workStartTime: document.getElementById('activity-start-time').value,
+        workDuration: Number(document.getElementById('activity-duration').value) || 0,
         outing: getRadioValue('outing'),
 
         socializing: getRadioValue('socializing'),
