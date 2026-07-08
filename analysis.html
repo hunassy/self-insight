@@ -24,6 +24,7 @@
       --color-primary-hover: #8B6675;
       --color-bg:         #F7F4F5;
       --color-selected-text: #ffffff;
+      --color-primary-soft: rgba(107, 79, 94, 0.12);
     }
 
     body {
@@ -41,6 +42,72 @@
       background-color: var(--color-primary-hover) !important;
       border-color: var(--color-primary-hover) !important;
     }
+
+    /* 7日間の傾向：グループの見出し */
+    .weekly-group-label {
+      font-size: 0.75rem;
+      color: var(--color-primary-hover);
+      font-weight: 500;
+      margin: 0 0 8px;
+      padding-left: 2px;
+    }
+
+    /* 7日間の傾向：カードを2列に並べる枠 */
+    .weekly-card-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    /* 7日間の傾向：1枚のカード */
+    .weekly-card {
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 12px;
+      box-shadow: 0 2px 8px rgba(107, 79, 94, 0.18);
+    }
+
+    /* 7日間の傾向：横幅いっぱいに広げたいカード用（開始時刻など） */
+    .weekly-card-full {
+      grid-column: span 2;
+    }
+
+    /* 7日間の傾向：アイコンの丸バッジ */
+    .weekly-card-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--color-primary-soft);
+      color: var(--color-primary);
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* 7日間の傾向：項目名 */
+    .weekly-card-label {
+      font-size: 0.75rem;
+      color: var(--color-primary-hover);
+    }
+
+    /* 7日間の傾向：今週の値（大きい数字） */
+    .weekly-card-value {
+      font-size: 1.375rem;
+      font-weight: 500;
+      color: #3D2B33;
+      margin-top: 6px;
+    }
+
+    /* 7日間の傾向：先週との差 */
+    .weekly-card-diff {
+      font-size: 0.6875rem;
+      color: #B0A0AA;
+      margin-top: 2px;
+    }
+
   </style>
 </head>
 <body>
@@ -135,13 +202,27 @@
           <div style="display:none;" id="detail-start-time"></div>
         </div>
 
-        <!-- コンディション別の作業傾向 -->
+        <!-- 作業時間と状態の分析 -->
+        <div class="border-bottom pb-2 mb-2">
+          <div class="fw-bold small mb-1" style="cursor:pointer;"
+            onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
+            ▶ 作業時間と状態の分析
+          </div>
+          <div style="display:none;" id="detail-work"></div>
+        </div>
+
+        <!-- 天気・気圧と状態の分析 -->
         <div class="pb-2 mb-2">
           <div class="fw-bold small mb-1" style="cursor:pointer;"
             onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
-            ▶ コンディション別の作業傾向
+            ▶ 天気・気圧と状態の分析
           </div>
-          <div style="display:none;" id="detail-condition"></div>
+          <div style="display:none;">
+            <div class="text-muted small mt-2 mb-1">天気</div>
+            <div id="detail-weather"></div>
+            <div class="text-muted small mt-3 mb-1">気圧</div>
+            <div id="detail-pressure"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -269,24 +350,44 @@
       html += '<th class="text-muted fw-normal small">体調</th>';
       html += '<th class="text-muted fw-normal small">メンタル</th>';
       html += '<th class="text-muted fw-normal small">活力</th>';
+      html += '<th class="text-muted fw-normal small">調子</th>';
       html += '</tr></thead><tbody>';
 
       groups.forEach(function(g) {
-        var physical = average(g.records.map(function(r) { return r.scores.physical; }));
-        var mental   = average(g.records.map(function(r) { return r.scores.mental; }));
-        var energy   = average(g.records.map(function(r) { return r.scores.eveningEnergy; }));
+
+        // 体調・メンタル・活力はscoresがある記録だけを平均の対象にする
+        // （scoresは朝の記録がある日だけ計算されているため、無い日はundefinedになる）
+        var physicalList = g.records
+          .map(function(r) { return r.scores ? r.scores.physical : undefined; })
+          .filter(function(v) { return v !== undefined && v !== null; });
+        var mentalList = g.records
+          .map(function(r) { return r.scores ? r.scores.mental : undefined; })
+          .filter(function(v) { return v !== undefined && v !== null; });
+        var energyList = g.records
+          .map(function(r) { return r.scores ? r.scores.eveningEnergy : undefined; })
+          .filter(function(v) { return v !== undefined && v !== null; });
+
+        var physical = average(physicalList);
+        var mental   = average(mentalList);
+        var energy   = average(energyList);
+
+        // 調子（dayRating）の平均を計算する
+        var dayRating = average(g.records.map(function(r) { return dayRatingToScore(r); }));
 
         html += '<tr>';
         html += '<td class="small">' + g.label + '</td>';
         html += '<td class="small text-muted">' + g.records.length + '件</td>';
-        html += '<td class="small">' + (physical !== null ? physical.toFixed(1) : '-') + '</td>';
-        html += '<td class="small">' + (mental   !== null ? mental.toFixed(1)   : '-') + '</td>';
-        html += '<td class="small">' + (energy   !== null ? energy.toFixed(1)   : '-') + '</td>';
+        html += '<td class="small">' + (physical  !== null ? physical.toFixed(1)  : '-') + '</td>';
+        html += '<td class="small">' + (mental    !== null ? mental.toFixed(1)    : '-') + '</td>';
+        html += '<td class="small">' + (energy    !== null ? energy.toFixed(1)    : '-') + '</td>';
+        html += '<td class="small">' + (dayRating !== null ? dayRating.toFixed(1) : '-') + '</td>';
         html += '</tr>';
       });
 
       html += '</tbody></table>';
-      return html;
+
+      // 列が増えて横幅が広くなったため、横スクロールできる枠で囲む
+      return '<div class="table-responsive">' + html + '</div>';
     }
 
     // 割合を計算してテキストで返す（0件のときは「-%」を返す）
@@ -536,8 +637,12 @@
       html += '<thead><tr>';
       html += '<th class="text-muted fw-normal small">曜日</th>';
       html += '<th class="text-muted fw-normal small">件数</th>';
-      html += '<th class="text-muted fw-normal small">平均開始時刻</th>';
-      html += '<th class="text-muted fw-normal small">平均作業時間</th>';
+      html += '<th class="text-muted fw-normal small">体調</th>';
+      html += '<th class="text-muted fw-normal small">メンタル</th>';
+      html += '<th class="text-muted fw-normal small">活力</th>';
+      html += '<th class="text-muted fw-normal small">調子</th>';
+      html += '<th class="text-muted fw-normal small">作業時間</th>';
+      html += '<th class="text-muted fw-normal small">開始時刻</th>';
       html += '</tr></thead><tbody>';
 
       weekdayOrder.forEach(function(dayLabel) {
@@ -553,9 +658,32 @@
           html += '<td class="small text-muted">0件</td>';
           html += '<td class="small">-</td>';
           html += '<td class="small">-</td>';
+          html += '<td class="small">-</td>';
+          html += '<td class="small">-</td>';
+          html += '<td class="small">-</td>';
+          html += '<td class="small">-</td>';
           html += '</tr>';
           return;
         }
+
+        // 体調・メンタル・活力の平均を計算する
+        // ※scoresは「朝の記録がある日」だけ存在するため、値がある記録だけを平均の対象にする
+        var physicalList = dayRecords
+          .map(function(r) { return r.scores ? r.scores.physical : undefined; })
+          .filter(function(v) { return v !== undefined && v !== null; });
+        var mentalList = dayRecords
+          .map(function(r) { return r.scores ? r.scores.mental : undefined; })
+          .filter(function(v) { return v !== undefined && v !== null; });
+        var energyList = dayRecords
+          .map(function(r) { return r.scores ? r.scores.eveningEnergy : undefined; })
+          .filter(function(v) { return v !== undefined && v !== null; });
+
+        var avgPhysical = average(physicalList);
+        var avgMental   = average(mentalList);
+        var avgEnergy   = average(energyList);
+
+        // 調子（dayRating）の平均を計算する
+        var avgDayRating = average(dayRecords.map(function(r) { return dayRatingToScore(r); }));
 
         // 開始時刻の平均を計算する（未記録は除外する）
         var startMinutesList = dayRecords
@@ -569,15 +697,21 @@
         html += '<tr>';
         html += '<td class="small">' + dayLabel + '曜日</td>';
         html += '<td class="small text-muted">' + dayRecords.length + '件</td>';
+        html += '<td class="small">' + (avgPhysical    !== null ? avgPhysical.toFixed(1)    : '-') + '</td>';
+        html += '<td class="small">' + (avgMental      !== null ? avgMental.toFixed(1)      : '-') + '</td>';
+        html += '<td class="small">' + (avgEnergy      !== null ? avgEnergy.toFixed(1)       : '-') + '</td>';
+        html += '<td class="small">' + (avgDayRating   !== null ? avgDayRating.toFixed(1)    : '-') + '</td>';
+        html += '<td class="small">' + (avgDuration    !== null ? avgDuration.toFixed(1) + '時間' : '-') + '</td>';
         html += '<td class="small">' + (avgStartMinutes !== null ? minutesToTimeString(avgStartMinutes) : '-') + '</td>';
-        html += '<td class="small">' + (avgDuration !== null ? avgDuration.toFixed(1) + '時間' : '-') + '</td>';
         html += '</tr>';
       });
 
       html += '</tbody></table>';
-      container.innerHTML = html;
-    }
 
+      // 列が増えて横幅が広くなったため、横スクロールできる枠で囲む
+      container.innerHTML = '<div class="table-responsive">' + html + '</div>';
+    }
+    
     // ============================
     // 開始時刻帯の分析
     // ============================
@@ -613,7 +747,11 @@
       html += '<thead><tr>';
       html += '<th class="text-muted fw-normal small">開始時刻帯</th>';
       html += '<th class="text-muted fw-normal small">件数</th>';
-      html += '<th class="text-muted fw-normal small">平均作業時間</th>';
+      html += '<th class="text-muted fw-normal small">体調</th>';
+      html += '<th class="text-muted fw-normal small">メンタル</th>';
+      html += '<th class="text-muted fw-normal small">活力</th>';
+      html += '<th class="text-muted fw-normal small">調子</th>';
+      html += '<th class="text-muted fw-normal small">作業時間</th>';
       html += '</tr></thead><tbody>';
 
       zoneOrder.forEach(function(zoneLabel) {
@@ -629,21 +767,50 @@
           html += '<td class="small">' + zoneLabel + '</td>';
           html += '<td class="small text-muted">0件</td>';
           html += '<td class="small">-</td>';
+          html += '<td class="small">-</td>';
+          html += '<td class="small">-</td>';
+          html += '<td class="small">-</td>';
+          html += '<td class="small">-</td>';
           html += '</tr>';
           return;
         }
+
+        // 体調・メンタル・活力の平均を計算する
+        // ※scoresは「朝の記録がある日」だけ存在するため、値がある記録だけを平均の対象にする
+        var physicalList = zoneRecords
+          .map(function(r) { return r.scores ? r.scores.physical : undefined; })
+          .filter(function(v) { return v !== undefined && v !== null; });
+        var mentalList = zoneRecords
+          .map(function(r) { return r.scores ? r.scores.mental : undefined; })
+          .filter(function(v) { return v !== undefined && v !== null; });
+        var energyList = zoneRecords
+          .map(function(r) { return r.scores ? r.scores.eveningEnergy : undefined; })
+          .filter(function(v) { return v !== undefined && v !== null; });
+
+        var avgPhysical = average(physicalList);
+        var avgMental   = average(mentalList);
+        var avgEnergy   = average(energyList);
+
+        // 調子（dayRating）の平均を計算する
+        var avgDayRating = average(zoneRecords.map(function(r) { return dayRatingToScore(r); }));
 
         var avgDuration = average(zoneRecords.map(function(r) { return getWorkDuration(r); }));
 
         html += '<tr>';
         html += '<td class="small">' + zoneLabel + '</td>';
         html += '<td class="small text-muted">' + zoneRecords.length + '件</td>';
-        html += '<td class="small">' + (avgDuration !== null ? avgDuration.toFixed(1) + '時間' : '-') + '</td>';
+        html += '<td class="small">' + (avgPhysical  !== null ? avgPhysical.toFixed(1)  : '-') + '</td>';
+        html += '<td class="small">' + (avgMental    !== null ? avgMental.toFixed(1)    : '-') + '</td>';
+        html += '<td class="small">' + (avgEnergy    !== null ? avgEnergy.toFixed(1)    : '-') + '</td>';
+        html += '<td class="small">' + (avgDayRating !== null ? avgDayRating.toFixed(1) : '-') + '</td>';
+        html += '<td class="small">' + (avgDuration  !== null ? avgDuration.toFixed(1) + '時間' : '-') + '</td>';
         html += '</tr>';
       });
 
       html += '</tbody></table>';
-      container.innerHTML = html;
+
+      // 列が増えて横幅が広くなったため、横スクロールできる枠で囲む
+      container.innerHTML = '<div class="table-responsive">' + html + '</div>';
     }
 
     // ============================
@@ -853,7 +1020,6 @@
       }
 
       var groups = [
-        { label: '0時間',    records: validRecords.filter(function(r) { return getWorkDuration(r) === 0; }) },
         { label: '1〜3時間', records: validRecords.filter(function(r) { return getWorkDuration(r) > 0 && getWorkDuration(r) <= 3; }) },
         { label: '4〜6時間', records: validRecords.filter(function(r) { return getWorkDuration(r) > 3 && getWorkDuration(r) <= 6; }) },
         { label: '7時間以上', records: validRecords.filter(function(r) { return getWorkDuration(r) > 6; }) }
@@ -1004,6 +1170,89 @@
     // 7日間の傾向
     // ============================
 
+    // ============================
+    // 7日間の傾向：カード1枚分のHTMLを作る
+    // ============================
+    function weeklyCard(iconClass, label, valueText, diffText, isFull) {
+      var fullClass = isFull ? ' weekly-card-full' : '';
+      var html = '<div class="weekly-card' + fullClass + '">';
+      html += '<div class="d-flex align-items-center gap-2">';
+      html += '<div class="weekly-card-icon"><i class="bi ' + iconClass + '"></i></div>';
+      html += '<span class="weekly-card-label">' + label + '</span>';
+      html += '</div>';
+      html += '<div class="weekly-card-value">' + valueText + '</div>';
+      html += '<div class="weekly-card-diff">' + diffText + '</div>';
+      html += '</div>';
+      return html;
+    }
+
+    // ============================
+    // 7日間の傾向：スコア系（体調・メンタル・活力・調子・睡眠満足度）の差分テキスト
+    // ============================
+    function formatScoreDiff(thisAvg, lastAvg, hasLastWeek) {
+      if (!hasLastWeek || thisAvg === null || lastAvg === null) {
+        return '比較データなし';
+      }
+      var diff = thisAvg - lastAvg;
+      var rounded = Math.abs(diff).toFixed(1);
+      if (diff > 0.05)  return '先週より' + rounded + '上昇';
+      if (diff < -0.05) return '先週より' + rounded + '低下';
+      return '変化なし';
+    }
+
+    // ============================
+    // 7日間の傾向：件数系（外出日数・交流日数）の差分テキスト
+    // ============================
+    function formatCountDiff(thisCount, lastCount, hasLastWeek, unit) {
+      if (!hasLastWeek) {
+        return '比較データなし';
+      }
+      var diff = thisCount - lastCount;
+      if (diff > 0) return '先週より' + diff + unit + '多い';
+      if (diff < 0) return '先週より' + Math.abs(diff) + unit + '少ない';
+      return '変化なし';
+    }
+
+    // ============================
+    // 7日間の傾向：作業時間の差分テキスト（時間→分に変換して表示）
+    // ============================
+    function formatWorkDiff(thisAvg, lastAvg, hasLastWeek) {
+      if (!hasLastWeek || thisAvg === null || lastAvg === null) {
+        return '比較データなし';
+      }
+      var diffMinutes = Math.round((thisAvg - lastAvg) * 60);
+      if (Math.abs(diffMinutes) < 5) return '変化なし';
+
+      var absMinutes = Math.abs(diffMinutes);
+      var text = absMinutes < 60 ? absMinutes + '分' : (absMinutes / 60).toFixed(1) + '時間';
+      return '先週より' + text + (diffMinutes > 0 ? '増加' : '減少');
+    }
+
+    // ============================
+    // 7日間の傾向：開始時刻の差分テキスト
+    // ============================
+    function formatStartTimeDiff(thisAvgMinutes, lastAvgMinutes, hasLastWeek) {
+      if (!hasLastWeek || thisAvgMinutes === null || lastAvgMinutes === null) {
+        return '比較データなし';
+      }
+      var diffMinutes = thisAvgMinutes - lastAvgMinutes;
+      if (Math.abs(diffMinutes) < 10) return '変化なし';
+
+      var absMinutes = Math.abs(diffMinutes);
+      var hours = Math.floor(absMinutes / 60);
+      var mins  = Math.round(absMinutes % 60);
+      var text = (hours > 0 ? hours + '時間' : '') + (mins > 0 ? mins + '分' : '');
+      return '先週より' + text + (diffMinutes < 0 ? '早い' : '遅い');
+    }
+
+    // ============================
+    // scoresやmorningのデータからundefined/nullを除いて平均を取るヘルパー
+    // ============================
+    function averageDefined(arr) {
+      var filtered = arr.filter(function(v) { return v !== undefined && v !== null; });
+      return average(filtered);
+    }
+
     function showWeeklyTrend(records) {
       var container = document.getElementById('weekly-trend');
       var validAll  = getValidRecords(records);
@@ -1011,7 +1260,6 @@
 
       // 今週（直近7日）と先週（8〜14日前）に分ける
       var thisWeek = getRecentRecords(validAll, 7);
-      var thisWeekFrom = getDaysAgo(today, 7);
       var lastWeekFrom = getDaysAgo(today, 14);
       var lastWeekTo   = getDaysAgo(today, 8);
       var lastWeek = validAll.filter(function(r) {
@@ -1023,53 +1271,87 @@
         return;
       }
 
+      var hasLastWeek = lastWeek.length > 0;
+
       var html = '';
 
-      // 期間の見出し（先週分のデータがある場合だけ表示）
-      if (lastWeek.length > 0) {
-        html += '<div class="small text-muted mb-3">';
-        html += '先週との比較<br>';
-        html += '（' + formatDateMD(lastWeekFrom) + '〜' + formatDateMD(lastWeekTo)
-              + ' → ' + formatDateMD(thisWeekFrom) + '〜' + formatDateMD(today) + '）';
-        html += '</div>';
-      }
-      
-      // 外出日数の比較
-      var thisWeekOuting = thisWeek.filter(function(r) { return r.evening.outing === 'した'; }).length;
-      var lastWeekOuting = lastWeek.filter(function(r) { return r.evening.outing === 'した'; }).length;
-      html += '<div class="mb-2">';
-      html += '<div class="small text-muted">外出日数</div>';
-      if (lastWeek.length > 0) {
-        html += '<div>' + lastWeekOuting + '日 → ' + thisWeekOuting + '日</div>';
-      } else {
-        html += '<div>' + thisWeekOuting + '日</div>';
-      }
+      // ---- コンディション ----
+      html += '<p class="weekly-group-label">コンディション</p>';
+      html += '<div class="weekly-card-grid">';
+
+      var thisDayRating = average(thisWeek.map(function(r) { return dayRatingToScore(r); }));
+      var lastDayRating = average(lastWeek.map(function(r) { return dayRatingToScore(r); }));
+      html += weeklyCard('bi-emoji-neutral', '調子',
+        thisDayRating.toFixed(1),
+        formatScoreDiff(thisDayRating, lastDayRating, hasLastWeek));
+
+      var thisPhysical = averageDefined(thisWeek.map(function(r) { return r.scores ? r.scores.physical : undefined; }));
+      var lastPhysical = averageDefined(lastWeek.map(function(r) { return r.scores ? r.scores.physical : undefined; }));
+      html += weeklyCard('bi-heart-pulse', '体調',
+        thisPhysical !== null ? thisPhysical.toFixed(1) : '-',
+        formatScoreDiff(thisPhysical, lastPhysical, hasLastWeek));
+
+      var thisMental = averageDefined(thisWeek.map(function(r) { return r.scores ? r.scores.mental : undefined; }));
+      var lastMental = averageDefined(lastWeek.map(function(r) { return r.scores ? r.scores.mental : undefined; }));
+      html += weeklyCard('bi-cloud', 'メンタル',
+        thisMental !== null ? thisMental.toFixed(1) : '-',
+        formatScoreDiff(thisMental, lastMental, hasLastWeek));
+
+      var thisEnergy = averageDefined(thisWeek.map(function(r) { return r.scores ? r.scores.eveningEnergy : undefined; }));
+      var lastEnergy = averageDefined(lastWeek.map(function(r) { return r.scores ? r.scores.eveningEnergy : undefined; }));
+      html += weeklyCard('bi-lightning-charge', '活力',
+        thisEnergy !== null ? thisEnergy.toFixed(1) : '-',
+        formatScoreDiff(thisEnergy, lastEnergy, hasLastWeek));
+
       html += '</div>';
 
-      // 作業時間の比較
-      var thisWeekWork = average(thisWeek.map(function(r) { return getWorkDuration(r); }));
-      var lastWeekWork = average(lastWeek.map(function(r) { return getWorkDuration(r); }));
-      html += '<div class="mb-2">';
-      html += '<div class="small text-muted">作業時間（平均）</div>';
-      if (lastWeek.length > 0 && lastWeekWork !== null) {
-        html += '<div>' + lastWeekWork.toFixed(1) + '時間 → ' + thisWeekWork.toFixed(1) + '時間</div>';
-      } else {
-        html += '<div>' + thisWeekWork.toFixed(1) + '時間</div>';
-      }
+      // ---- 生活 ----
+      html += '<p class="weekly-group-label">生活</p>';
+      html += '<div class="weekly-card-grid">';
+
+      var thisSleepQuality = averageDefined(thisWeek.map(function(r) { return r.morning ? r.morning.sleepQuality : undefined; }));
+      var lastSleepQuality = averageDefined(lastWeek.map(function(r) { return r.morning ? r.morning.sleepQuality : undefined; }));
+      html += weeklyCard('bi-moon-stars', '睡眠満足度',
+        thisSleepQuality !== null ? thisSleepQuality.toFixed(1) : '-',
+        formatScoreDiff(thisSleepQuality, lastSleepQuality, hasLastWeek));
+
+      var thisWork = average(thisWeek.map(function(r) { return getWorkDuration(r); }));
+      var lastWork = average(lastWeek.map(function(r) { return getWorkDuration(r); }));
+      html += weeklyCard('bi-briefcase', '作業時間',
+        thisWork.toFixed(1) + '時間',
+        formatWorkDiff(thisWork, lastWork, hasLastWeek));
+
+      var thisStartList = thisWeek
+        .map(function(r) { return timeStringToMinutes(r.evening.workStartTime); })
+        .filter(function(m) { return m !== null; });
+      var lastStartList = lastWeek
+        .map(function(r) { return timeStringToMinutes(r.evening.workStartTime); })
+        .filter(function(m) { return m !== null; });
+      var thisStartAvg = average(thisStartList);
+      var lastStartAvg = average(lastStartList);
+      html += weeklyCard('bi-clock', '作業開始時刻',
+        thisStartAvg !== null ? minutesToTimeString(thisStartAvg) : '-',
+        formatStartTimeDiff(thisStartAvg, lastStartAvg, hasLastWeek),
+        true);
+
       html += '</div>';
 
-      // 調子の比較（dayRating基準：良い日=1点、普通の日=0点、つらい日=-1点）
-      var thisWeekEnergy = average(thisWeek.map(function(r) { return dayRatingToScore(r); }));
-      var lastWeekEnergy = average(lastWeek.map(function(r) { return dayRatingToScore(r); }));
-      html += '<div class="mb-2">';
-      html += '<div class="small text-muted">コンディション（平均）</div>';
-      if (lastWeek.length > 0 && lastWeekEnergy !== null) {
-        var energyDiff = thisWeekEnergy - lastWeekEnergy;
-        var energyLabel = energyDiff > 0.15 ? '上昇' : energyDiff < -0.15 ? '低下' : 'ほぼ変化なし';
-        html += '<div>' + lastWeekEnergy.toFixed(1) + ' → ' + thisWeekEnergy.toFixed(1) + '　(' + energyLabel + ')</div>';
-      } else {
-        html += '<div>' + (thisWeekEnergy !== null ? thisWeekEnergy.toFixed(1) : '-') + '</div>';
-      }
+      // ---- 活動 ----
+      html += '<p class="weekly-group-label">活動</p>';
+      html += '<div class="weekly-card-grid">';
+
+      var thisOuting = thisWeek.filter(function(r) { return r.evening.outing === 'した'; }).length;
+      var lastOuting = lastWeek.filter(function(r) { return r.evening.outing === 'した'; }).length;
+      html += weeklyCard('bi-door-open', '外出',
+        thisOuting + '日',
+        formatCountDiff(thisOuting, lastOuting, hasLastWeek, '日'));
+
+      var thisSocial = thisWeek.filter(function(r) { return r.evening.socializing === 'あった'; }).length;
+      var lastSocial = lastWeek.filter(function(r) { return r.evening.socializing === 'あった'; }).length;
+      html += weeklyCard('bi-people', '交流',
+        thisSocial + '日',
+        formatCountDiff(thisSocial, lastSocial, hasLastWeek, '日'));
+
       html += '</div>';
 
       container.innerHTML = html;
@@ -1091,7 +1373,6 @@
     showDetailStable(validRecords);
     showDetailWeekday(validRecords);
     showDetailStartTime(validRecords);
-    showDetailCondition(validRecords);
     showDetailSleep(validRecords);
     showDetailOuting(validRecords);
     showDetailSocial(validRecords);
