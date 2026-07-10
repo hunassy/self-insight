@@ -142,12 +142,16 @@
           <div class="d-flex align-items-center gap-3 mb-2">
             <div>
               <label for="sleep-start" class="form-label mb-1">就寝</label>
-              <input type="time" id="sleep-start" class="form-control" style="width: 120px;">
+              <select id="sleep-start" class="form-select" style="width: 120px;">
+                <option value="">未選択</option>
+              </select>
             </div>
             <div class="mt-3">→</div>
             <div>
               <label for="sleep-end" class="form-label mb-1">起床</label>
-              <input type="time" id="sleep-end" class="form-control" style="width: 120px;">
+              <select id="sleep-end" class="form-select" style="width: 120px;">
+                <option value="">未選択</option>
+              </select>
             </div>
           </div>
           <div id="sleep-hours-display" class="text-muted small"></div>
@@ -409,6 +413,51 @@
       return radio ? radio.value : null;
     }
 
+    // ============================
+    // 就寝・起床のプルダウンを作る
+    // ============================
+
+    // 就寝：23:00〜翌4:00（30分刻み）
+    function populateSleepStartOptions() {
+      var select = document.getElementById('sleep-start');
+      var startTotal = 23 * 60;       // 23:00
+      var endTotal   = (24 + 4) * 60; // 翌4:00
+
+      for (var total = startTotal; total <= endTotal; total += 30) {
+        // 24時を超えた分は実際の時計の表示に戻す（28:00 → 04:00）
+        var wallMinutes = total % (24 * 60);
+        var h = Math.floor(wallMinutes / 60);
+        var m = wallMinutes % 60;
+        var timeString = String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+
+        var option = document.createElement('option');
+        option.value = timeString;
+        option.textContent = timeString;
+        select.appendChild(option);
+      }
+    }
+
+    // 起床：4:00〜10:00（30分刻み）
+    function populateSleepEndOptions() {
+      var select = document.getElementById('sleep-end');
+      var startTotal = 4 * 60;   // 4:00
+      var endTotal   = 10 * 60;  // 10:00
+
+      for (var total = startTotal; total <= endTotal; total += 30) {
+        var h = Math.floor(total / 60);
+        var m = total % 60;
+        var timeString = String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+
+        var option = document.createElement('option');
+        option.value = timeString;
+        option.textContent = timeString;
+        select.appendChild(option);
+      }
+    }
+
+    populateSleepStartOptions();
+    populateSleepEndOptions();
+    
     // ============================
     // 睡眠時間を計算する
     // ============================
