@@ -750,6 +750,90 @@
     }
     
     // ============================
+    // 月別の状態分析（年をまたいで1月〜12月で合算）
+    // ============================
+
+    // 日付文字列（例：2026-06-05）から月番号（1〜12）を返す
+    function getMonthNumber(dateString) {
+      var parts = dateString.split('-');
+      return Number(parts[1]); // "06" → 6
+    }
+
+    function showDetailMonthly(validRecords) {
+      var container = document.getElementById('detail-monthly');
+      if (!container) return;
+
+      if (validRecords.length < 5) {
+        container.innerHTML = notEnoughData();
+        return;
+      }
+
+      var html = '<table class="table table-sm mt-2">';
+      html += '<thead><tr>';
+      html += '<th class="text-muted fw-normal small">月</th>';
+      html += '<th class="text-muted fw-normal small">件数</th>';
+      html += '<th class="text-muted fw-normal small">体調</th>';
+      html += '<th class="text-muted fw-normal small">メンタル</th>';
+      html += '<th class="text-muted fw-normal small">活力</th>';
+      html += '<th class="text-muted fw-normal small">調子</th>';
+      html += '</tr></thead><tbody>';
+
+      // 1月〜12月まで順番に処理する
+      for (var month = 1; month <= 12; month++) {
+
+        // この月のレコードだけ絞り込む（年は問わない）
+        var monthRecords = validRecords.filter(function(r) {
+          return getMonthNumber(r.date) === month;
+        });
+
+        if (monthRecords.length === 0) {
+          html += '<tr>';
+          html += '<td class="small">' + month + '月</td>';
+          html += '<td class="small text-muted">0件</td>';
+          html += '<td class="small">-</td>';
+          html += '<td class="small">-</td>';
+          html += '<td class="small">-</td>';
+          html += '<td class="small">-</td>';
+          html += '</tr>';
+          continue;
+        }
+
+        // 体調・メンタル・活力の平均を計算する
+        // ※scoresは「朝の記録がある日」だけ存在するため、値がある記録だけを平均の対象にする
+        var physicalList = monthRecords
+          .map(function(r) { return r.scores ? r.scores.physical : undefined; })
+          .filter(function(v) { return v !== undefined && v !== null; });
+        var mentalList = monthRecords
+          .map(function(r) { return r.scores ? r.scores.mental : undefined; })
+          .filter(function(v) { return v !== undefined && v !== null; });
+        var energyList = monthRecords
+          .map(function(r) { return r.scores ? r.scores.eveningEnergy : undefined; })
+          .filter(function(v) { return v !== undefined && v !== null; });
+
+        var avgPhysical = average(physicalList);
+        var avgMental   = average(mentalList);
+        var avgEnergy   = average(energyList);
+
+        // 調子（dayRating）の平均を計算する
+        var avgDayRating = average(monthRecords.map(function(r) { return dayRatingToScore(r); }));
+
+        html += '<tr>';
+        html += '<td class="small">' + month + '月</td>';
+        html += '<td class="small text-muted">' + monthRecords.length + '件</td>';
+        html += '<td class="small">' + (avgPhysical  !== null ? avgPhysical.toFixed(1)  : '-') + '</td>';
+        html += '<td class="small">' + (avgMental    !== null ? avgMental.toFixed(1)    : '-') + '</td>';
+        html += '<td class="small">' + (avgEnergy    !== null ? avgEnergy.toFixed(1)    : '-') + '</td>';
+        html += '<td class="small">' + (avgDayRating !== null ? avgDayRating.toFixed(1) : '-') + '</td>';
+        html += '</tr>';
+      }
+
+      html += '</tbody></table>';
+
+      // 横幅が広いので横スクロールできる枠で囲む
+      container.innerHTML = '<div class="table-responsive">' + html + '</div>';
+    }
+
+    // ============================
     // 開始時刻帯の分析
     // ============================
 
