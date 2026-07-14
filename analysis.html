@@ -487,13 +487,21 @@
         return d.next.evening.dayRating === 'bad';
       });
 
-      // 回復した日の行動パターンを集計する（件数のまま持つ。％表示への変換は表示側で行う）
-      var recoveredSleep65Count = recovered.filter(function(d) { return d.next.morning.sleepHours >= 6.5; }).length;
-      var recoveredOutingCount  = recovered.filter(function(d) { return d.next.evening.outing === 'した'; }).length;
-      var recoveredSocialCount  = recovered.filter(function(d) { return d.next.evening.socializing === 'あった'; }).length;
+      // 回復した日の睡眠時間の平均を計算する（設計書：睡眠時間の平均）
+      var avgSleepHours = average(recovered.map(function(d) { return d.next.morning.sleepHours; }));
+
+      // 回復した日の外出(種類)率・交流(種類)率を集計する（種類ごとに独立して集計する）
+      var outingTypes = ['通院', '外食', '買い物', '手続き', '趣味'];
+      var socialTypes = ['対面', 'チャット', '電話', 'ビデオ通話'];
+      var outingCounts = recovered.length > 0
+        ? countItems(recovered.map(function(d) { return d.next; }), 'outing', outingTypes)
+        : [];
+      var socialCounts = recovered.length > 0
+        ? countItems(recovered.map(function(d) { return d.next; }), 'socializing', socialTypes)
+        : [];
 
       // 回復した日のdone集計
-      var doneItems = ['活動できた', '外出できた', '人と話せた', '家事できた', '趣味ができた', 'ゆっくり休めた'];
+      var doneItems = ['入浴できた', '料理できた', '洗濯できた', '掃除できた', '趣味ができた', 'ゆっくり休めた'];
       var doneCounts = recovered.length > 0
         ? countItems(recovered.map(function(d) { return d.next; }), 'done', doneItems)
         : [];
@@ -503,9 +511,9 @@
         totalCount: recoveryDays.length,
         recoveredCount: recovered.length,
         notRecoveredCount: notRecovered.length,
-        recoveredSleep65Count: recoveredSleep65Count,
-        recoveredOutingCount: recoveredOutingCount,
-        recoveredSocialCount: recoveredSocialCount,
+        avgSleepHours: avgSleepHours,
+        outingCounts: outingCounts, // [{item, count}, ...]
+        socialCounts: socialCounts, // [{item, count}, ...]
         doneCounts: doneCounts // [{item, count}, ...]（countItemsの戻り値そのまま）
       };
     }
@@ -527,9 +535,19 @@
 
       if (data.recoveredCount > 0) {
         html += '<div class="mb-1">回復した日の行動：</div>';
-        html += '<div class="small">・睡眠6.5時間以上：' + toPercent(data.recoveredSleep65Count, data.recoveredCount) + '</div>';
-        html += '<div class="small">・外出あり：' + toPercent(data.recoveredOutingCount, data.recoveredCount) + '</div>';
-        html += '<div class="small">・交流あり：' + toPercent(data.recoveredSocialCount, data.recoveredCount) + '</div>';
+        html += '<div class="small">・平均睡眠時間：' + (data.avgSleepHours !== null ? data.avgSleepHours.toFixed(1) + '時間' : '-') + '</div>';
+
+        if (data.outingCounts.length > 0) {
+          data.outingCounts.forEach(function(c) {
+            html += '<div class="small">・外出（' + c.item + '）：' + toPercent(c.count, data.recoveredCount) + '</div>';
+          });
+        }
+
+        if (data.socialCounts.length > 0) {
+          data.socialCounts.forEach(function(c) {
+            html += '<div class="small">・交流（' + c.item + '）：' + toPercent(c.count, data.recoveredCount) + '</div>';
+          });
+        }
       }
 
       html += '</div>';
@@ -563,25 +581,27 @@
         return { enoughData: false };
       }
 
-      // 悪化した日の行動パターンを集計する（件数のまま持つ）
-      var shortSleepCount = badDays.filter(function(r) { return r.morning.sleepHours < 6; }).length;
-      var noOutingCount   = badDays.filter(function(r) { return r.evening.outing === 'しなかった'; }).length;
-      var noSocialCount   = badDays.filter(function(r) { return r.evening.socializing === 'なかった'; }).length;
-      var longWorkCount   = badDays.filter(function(r) { return populateActivityDurationOptions(r) >= 7; }).length;
-      var noWorkCount     = badDays.filter(function(r) { return populateActivityDurationOptions(r) === 0; }).length;
+      // 悪化した日の睡眠時間・活動時間の平均を計算する（設計書：睡眠時間の平均、平均活動時間）
+      var avgSleepHours = average(badDays.map(function(r) { return r.morning.sleepHours; }));
+      var avgWorkHours  = average(badDays.map(function(r) { return populateActivityDurationOptions(r); }));
+
+      // 悪化した日の外出(種類)率・交流(種類)率を集計する（種類ごとに独立して集計する）
+      var outingTypes = ['通院', '外食', '買い物', '手続き', '趣味'];
+      var socialTypes = ['対面', 'チャット', '電話', 'ビデオ通話'];
+      var outingCounts = countItems(badDays, 'outing', outingTypes);
+      var socialCounts = countItems(badDays, 'socializing', socialTypes);
 
       // つらい日のhard集計
-      var hardItems = ['疲れた', '不安が強い', '落ち込み', '人間関係', '睡眠不足', '体調不良', '仕事のストレス'];
+      var hardItems = ['家事', '人間関係', '金銭面', '仕事・勉強', '睡眠不足', '予定が多い', '通院', '手続き'];
       var hardCounts = countItems(badDays, 'hard', hardItems);
 
       return {
         enoughData: true,
         badDayCount: badDays.length,
-        shortSleepCount: shortSleepCount,
-        noOutingCount: noOutingCount,
-        noSocialCount: noSocialCount,
-        longWorkCount: longWorkCount,
-        noWorkCount: noWorkCount,
+        avgSleepHours: avgSleepHours,
+        avgWorkHours: avgWorkHours,
+        outingCounts: outingCounts, // [{item, count}, ...]
+        socialCounts: socialCounts, // [{item, count}, ...]
         hardCounts: hardCounts // [{item, count}, ...]
       };
     }
@@ -599,12 +619,21 @@
       }
 
       var html = '<div class="mt-2">';
-      html += '<div class="small text-muted mb-2">活力・メンタルが低下した日（' + data.badDayCount + '件）の行動：</div>';
-      html += '<div class="small">・睡眠6時間未満：' + toPercent(data.shortSleepCount, data.badDayCount) + '</div>';
-      html += '<div class="small">・外出なし：' + toPercent(data.noOutingCount, data.badDayCount) + '</div>';
-      html += '<div class="small">・交流なし：' + toPercent(data.noSocialCount, data.badDayCount) + '</div>';
-      html += '<div class="small">・活動7時間以上：' + toPercent(data.longWorkCount, data.badDayCount) + '</div>';
-      html += '<div class="small">・活動なし：' + toPercent(data.noWorkCount, data.badDayCount) + '</div>';
+      html += '<div class="small text-muted mb-2">活力・メンタルが低下した日（' + data.badDayCount + '件）：</div>';
+      html += '<div class="small">・平均睡眠時間：' + (data.avgSleepHours !== null ? data.avgSleepHours.toFixed(1) + '時間' : '-') + '</div>';
+      html += '<div class="small">・平均活動時間：' + (data.avgWorkHours  !== null ? data.avgWorkHours.toFixed(1)  + '時間' : '-') + '</div>';
+
+      if (data.outingCounts.length > 0) {
+        data.outingCounts.forEach(function(c) {
+          html += '<div class="small">・外出（' + c.item + '）：' + toPercent(c.count, data.badDayCount) + '</div>';
+        });
+      }
+
+      if (data.socialCounts.length > 0) {
+        data.socialCounts.forEach(function(c) {
+          html += '<div class="small">・交流（' + c.item + '）：' + toPercent(c.count, data.badDayCount) + '</div>';
+        });
+      }
 
       html += '</div>';
 
@@ -639,26 +668,30 @@
 
       // 安定した日の行動パターンを集計する（件数のまま持つ）
       var sleep7Count   = stableDays.filter(function(r) { return r.morning.sleepHours >= 7; }).length;
-      var outingCount   = stableDays.filter(function(r) { return r.evening.outing === 'した'; }).length;
-      var socialCount   = stableDays.filter(function(r) { return r.evening.socializing === 'あった'; }).length;
       var work3to4Count = stableDays.filter(function(r) { return populateActivityDurationOptions(r) >= 3 && populateActivityDurationOptions(r) <= 4; }).length;
 
       var avgSleep = average(stableDays.map(function(r) { return r.morning.sleepHours; }));
       var avgWork  = average(stableDays.map(function(r) { return populateActivityDurationOptions(r); }));
 
+      // 安定した日の外出(種類)率・交流(種類)率を集計する（種類ごとに独立して集計する）
+      var outingTypes = ['通院', '外食', '買い物', '手続き', '趣味'];
+      var socialTypes = ['対面', 'チャット', '電話', 'ビデオ通話'];
+      var outingCounts = countItems(stableDays, 'outing', outingTypes);
+      var socialCounts = countItems(stableDays, 'socializing', socialTypes);
+
       // 良い日のdone集計
-      var doneItems = ['活動できた', '外出できた', '人と話せた', '家事できた', '趣味ができた', 'ゆっくり休めた'];
+      var doneItems = ['入浴できた', '料理できた', '洗濯できた', '掃除できた', '趣味ができた', 'ゆっくり休めた'];
       var doneCounts = countItems(stableDays, 'done', doneItems);
 
       return {
         enoughData: true,
         stableDayCount: stableDays.length,
         sleep7Count: sleep7Count,
-        outingCount: outingCount,
-        socialCount: socialCount,
         work3to4Count: work3to4Count,
         avgSleep: avgSleep,
         avgWork: avgWork,
+        outingCounts: outingCounts, // [{item, count}, ...]
+        socialCounts: socialCounts, // [{item, count}, ...]
         doneCounts: doneCounts // [{item, count}, ...]
       };
     }
@@ -681,22 +714,22 @@
       html += '<div class="small text-muted mb-2">体調・メンタル・活力が安定した日（' + data.stableDayCount + '件）：</div>';
       html += '<div class="small">・平均睡眠時間：' + (data.avgSleep !== null ? data.avgSleep.toFixed(1) : '-') + '時間</div>';
       html += '<div class="small">・平均活動時間：' + (data.avgWork  !== null ? data.avgWork.toFixed(1)  : '-') + '時間</div>';
-      html += '<div class="small">・外出あり：' + toPercent(data.outingCount, data.stableDayCount) + '</div>';
-      html += '<div class="small">・交流あり：' + toPercent(data.socialCount, data.stableDayCount) + '</div>';
       html += '<div class="small">・睡眠7時間以上：' + toPercent(data.sleep7Count, data.stableDayCount) + '</div>';
       html += '<div class="small">・活動3〜4時間：' + toPercent(data.work3to4Count, data.stableDayCount) + '</div>';
 
-      html += '</div>';
-
-      // 良い日のdone集計を追加する
-      if (data.doneCounts.length > 0) {
-        html += '<div class="mt-2 mb-1">良い日によく記録されたこと：</div>';
-        data.doneCounts.forEach(function(c) {
-          html += '<div class="small">・' + c.item + '：' + toPercent(c.count, data.stableDayCount) + '</div>';
+      if (data.outingCounts.length > 0) {
+        data.outingCounts.forEach(function(c) {
+          html += '<div class="small">・外出（' + c.item + '）：' + toPercent(c.count, data.stableDayCount) + '</div>';
         });
       }
 
-      container.innerHTML = html;
+      if (data.socialCounts.length > 0) {
+        data.socialCounts.forEach(function(c) {
+          html += '<div class="small">・交流（' + c.item + '）：' + toPercent(c.count, data.stableDayCount) + '</div>';
+        });
+      }
+
+      html += '</div>';
     }
 
     // ============================
@@ -1186,15 +1219,32 @@
     // ============================
     // 外出と状態の分析：データを計算する部分
     // ============================
+    // 外出データを安全に配列として取得する（古い文字列データは空配列扱いにする）
+    function getOutingList(record) {
+      var outing = record.evening.outing;
+      return Array.isArray(outing) ? outing : [];
+    }
+
     function calculateOutingStats(validRecords) {
       if (validRecords.length < 5) {
         return { enoughData: false };
       }
 
-      var groups = [
-        { label: '外出した',      records: validRecords.filter(function(r) { return r.evening.outing === 'した'; }) },
-        { label: '外出しなかった', records: validRecords.filter(function(r) { return r.evening.outing === 'しなかった'; }) }
-      ];
+      var outingTypes = ['通院', '外食', '買い物', '手続き', '趣味'];
+
+      // 種類ごとに独立して集計する（1日に複数該当してもそれぞれでカウントする）
+      var groups = outingTypes.map(function(type) {
+        return {
+          label: type,
+          records: validRecords.filter(function(r) { return getOutingList(r).indexOf(type) !== -1; })
+        };
+      });
+
+      // 外出なし（配列が空）のグループを追加する
+      groups.push({
+        label: '外出なし',
+        records: validRecords.filter(function(r) { return getOutingList(r).length === 0; })
+      });
 
       return { enoughData: true, groups: calculateGroupStats(groups) };
     }
@@ -1218,15 +1268,32 @@
     // ============================
     // 交流と状態の分析：データを計算する部分
     // ============================
+    // 交流データを安全に配列として取得する（古い文字列データは空配列扱いにする）
+    function getSocialList(record) {
+      var socializing = record.evening.socializing;
+      return Array.isArray(socializing) ? socializing : [];
+    }
+
     function calculateSocialStats(validRecords) {
       if (validRecords.length < 5) {
         return { enoughData: false };
       }
 
-      var groups = [
-        { label: '交流あった',   records: validRecords.filter(function(r) { return r.evening.socializing === 'あった'; }) },
-        { label: '交流なかった', records: validRecords.filter(function(r) { return r.evening.socializing === 'なかった'; }) }
-      ];
+      var socialTypes = ['対面', 'チャット', '電話', 'ビデオ通話'];
+
+      // 種類ごとに独立して集計する（1日に複数該当してもそれぞれでカウントする）
+      var groups = socialTypes.map(function(type) {
+        return {
+          label: type,
+          records: validRecords.filter(function(r) { return getSocialList(r).indexOf(type) !== -1; })
+        };
+      });
+
+      // 交流なし（配列が空）のグループを追加する
+      groups.push({
+        label: '交流なし',
+        records: validRecords.filter(function(r) { return getSocialList(r).length === 0; })
+      });
 
       return { enoughData: true, groups: calculateGroupStats(groups) };
     }
@@ -1614,14 +1681,14 @@
       html += '<p class="weekly-group-label">活動</p>';
       html += '<div class="weekly-card-grid">';
 
-      var thisOuting = thisWeek.filter(function(r) { return r.evening.outing === 'した'; }).length;
-      var lastOuting = lastWeek.filter(function(r) { return r.evening.outing === 'した'; }).length;
+      var thisOuting = thisWeek.filter(function(r) { return getOutingList(r).length > 0; }).length;
+      var lastOuting = lastWeek.filter(function(r) { return getOutingList(r).length > 0; }).length;
       html += weeklyCard('bi-door-open', '外出',
         thisOuting + '日',
         formatCountDiff(thisOuting, lastOuting, hasLastWeek, '日'));
 
-      var thisSocial = thisWeek.filter(function(r) { return r.evening.socializing === 'あった'; }).length;
-      var lastSocial = lastWeek.filter(function(r) { return r.evening.socializing === 'あった'; }).length;
+      var thisSocial = thisWeek.filter(function(r) { return getSocialList(r).length > 0; }).length;
+      var lastSocial = lastWeek.filter(function(r) { return getSocialList(r).length > 0; }).length;
       html += weeklyCard('bi-people', '交流',
         thisSocial + '日',
         formatCountDiff(thisSocial, lastSocial, hasLastWeek, '日'));

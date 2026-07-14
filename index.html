@@ -178,6 +178,22 @@
             </span>
           </div>
         </div>
+
+        <!-- 起床時の眠気 -->
+        <div class="mt-3">
+          <label class="form-label">起床時の眠気</label>
+          <div class="sign-btn sign-btn-sleep">
+            <span><input type="radio" id="dr-none" name="morning-drowsiness" value="なし">
+              <label for="dr-none"><span class="text-sm">なし</span></label>
+            </span>
+            <span><input type="radio" id="dr-little" name="morning-drowsiness" value="少し">
+              <label for="dr-little"><span class="text-sm">少し</span></label>
+            </span>
+            <span><input type="radio" id="dr-strong" name="morning-drowsiness" value="強い">
+              <label for="dr-strong"><span class="text-sm">強い</span></label>
+            </span>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -192,24 +208,6 @@
                 <i class="bi bi-check-circle" style="font-size:1.6rem;"></i>
               </div>
               <span class="text">問題なし</span>
-            </label>
-          </span>
-
-          <span><input type="checkbox" id="b2" name="body[]" value="身体が軽い">
-            <label for="b2">
-              <div style="width:36px; height:36px; display:flex; align-items:center; justify-content:center;">
-                <i class="bi bi-feather" style="font-size:1.6rem;"></i>
-              </div>
-              <span class="text">身体が軽い</span>
-            </label>
-          </span>
-
-          <span><input type="checkbox" id="b3" name="body[]" value="眠い">
-            <label for="b3">
-              <div style="width:36px; height:36px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-                <img src="images/29537.png" style="max-width:36px; max-height:36px; width:auto; height:auto;">
-              </div>
-              <span class="text">眠い</span>
             </label>
           </span>
 
@@ -252,6 +250,9 @@
             </label>
           </span>
 
+          <span><input type="checkbox" id="b11" name="body[]" value="吐き気">
+            <label for="b11"><i class="bi bi-emoji-dizzy icon"></i><span class="text">吐き気</span></label></span>
+
           <span><input type="checkbox" id="b9" name="body[]" value="食欲不振">
             <label for="b9">
               <div style="width:36px; height:36px; display:flex; align-items:center; justify-content:center;">
@@ -268,6 +269,7 @@
               </div>
               <span class="text">過食</span>
             </label>
+          </span>
         </div>
       </div>
     </div>
@@ -283,47 +285,23 @@
           <span><input type="checkbox" id="m2" name="mental[]" value="前向き">
             <label for="m2"><i class="bi bi-emoji-laughing icon"></i><span class="text">前向き</span></label></span>
 
+          <span><input type="checkbox" id="m12" name="mental[]" value="もやもや">
+            <label for="m12"><i class="bi bi-cloud-fog2 icon"></i><span class="text">もやもや</span></label></span>
+
           <span><input type="checkbox" id="m3" name="mental[]" value="不安">
             <label for="m3"><i class="bi bi-emoji-frown icon"></i><span class="text">不安</span></label></span>
-
-          <span><input type="checkbox" id="m4" name="mental[]" value="落ち込み">
-            <label for="m4"><i class="bi bi-emoji-tear icon"></i><span class="text">落ち込み</span></label></span>
-
-          <span><input type="checkbox" id="m5" name="mental[]" value="イライラ">
-            <label for="m5"><i class="bi bi-emoji-angry icon"></i><span class="text">イライラ</span></label></span>
 
           <span><input type="checkbox" id="m6" name="mental[]" value="焦り">
             <label for="m6"><i class="bi bi-hourglass-split icon"></i><span class="text">焦り</span></label></span>
 
+          <span><input type="checkbox" id="m5" name="mental[]" value="イライラ">
+            <label for="m5"><i class="bi bi-emoji-angry icon"></i><span class="text">イライラ</span></label></span>
+
+          <span><input type="checkbox" id="m4" name="mental[]" value="落ち込み">
+            <label for="m4"><i class="bi bi-emoji-tear icon"></i><span class="text">落ち込み</span></label></span>
+
           <span><input type="checkbox" id="m7" name="mental[]" value="無気力">
             <label for="m7"><i class="bi bi-battery icon"></i><span class="text">無気力</span></label></span>
-
-          <span><input type="checkbox" id="m8" name="mental[]" value="緊張">
-            <label for="m8">
-              <div style="width:36px; height:36px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-                <img src="images/20250.png" style="max-width:36px; max-height:36px; width:auto; height:auto;">
-              </div>
-              <span class="text">緊張</span>
-            </label>
-          </span>
-
-          <span><input type="checkbox" id="m9" name="mental[]" value="考えがまとまらない">
-            <label for="m9">
-              <div style="width:36px; height:36px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-                <img src="images/28493.png" style="max-width:36px; max-height:36px; width:auto; height:auto;">
-              </div>
-              <span class="text-sm">考えが<br>まとまらない</span>
-            </label>
-          </span>
-
-          <span><input type="checkbox" id="m10" name="mental[]" value="集中しにくい">
-            <label for="m10">
-              <div style="width:36px; height:36px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-                <img src="images/32925.png" style="max-width:36px; max-height:36px; width:auto; height:auto;">
-              </div>
-              <span class="text-sm">集中<br>しにくい</span>
-            </label>
-          </span>
 
           <span><input type="checkbox" id="m11" name="mental[]" value="憂鬱">
             <label for="m11">
@@ -333,6 +311,9 @@
               <span class="text">憂鬱</span>
             </label>
           </span>
+
+          <span><input type="checkbox" id="m13" name="mental[]" value="孤独感">
+            <label for="m13"><i class="bi bi-heartbreak icon"></i><span class="text">孤独感</span></label></span>
         </div>
       </div>
     </div>
@@ -778,6 +759,7 @@
         sleepStart: document.getElementById('sleep-start').value,
         sleepEnd:   document.getElementById('sleep-end').value,
         sleepQuality: Number(getRadioValue('sleep-quality')),
+        morningDrowsiness: getRadioValue('morning-drowsiness'),
         weather: null,
         temperature: null,
         pressure: null
@@ -810,6 +792,7 @@
               sleepStart: record.sleepStart,
               sleepEnd:   record.sleepEnd,
               sleepQuality: record.sleepQuality,
+              morningDrowsiness: record.morningDrowsiness,
               weather: record.weather,
               temperature: record.temperature,
               pressure: record.pressure
