@@ -162,8 +162,13 @@
     <!-- 最近の発見 -->
     <div class="card mb-3">
       <div class="card-body">
-        <h2 class="fs-6 fw-bold mb-3">最近の発見 <span class="text-muted fw-normal small">（直近30日）</span></h2>
-        <div id="recent-patterns">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h2 class="fs-6 fw-bold mb-0">最近の発見 <span class="text-muted fw-normal small">（直近30日）</span></h2>
+          <button class="btn btn-outline-secondary btn-sm" id="regenerate-discovery-btn" onclick="handleRegenerateDiscovery()">
+            今すぐ更新
+          </button>
+        </div>
+        <div id="recent-discovery">
           <p class="text-muted">読み込み中...</p>
         </div>
       </div>
@@ -188,82 +193,6 @@
         </div>
       </div>
     </div>
-
-    <!-- 個別分析 -->
-    <div class="card mb-3">
-      <div class="card-body">
-        <h2 class="fs-6 fw-bold mb-3">個別分析</h2>
-
-        <!-- 回復要因分析 -->
-        <div class="border-bottom pb-2 mb-2">
-          <div class="fw-bold small mb-1" style="cursor:pointer;"
-            onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
-            ▶ 回復要因分析
-          </div>
-          <div style="display:none;" id="detail-recovery"></div>
-        </div>
-
-        <!-- 悪化トリガー分析 -->
-        <div class="border-bottom pb-2 mb-2">
-          <div class="fw-bold small mb-1" style="cursor:pointer;"
-            onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
-            ▶ 悪化トリガー分析
-          </div>
-          <div style="display:none;" id="detail-trigger"></div>
-        </div>
-
-        <!-- 安定パターン分析 -->
-        <div class="border-bottom pb-2 mb-2">
-          <div class="fw-bold small mb-1" style="cursor:pointer;"
-            onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
-            ▶ 安定パターン分析
-          </div>
-          <div style="display:none;" id="detail-stable"></div>
-        </div>
-
-        <!-- 曜日別の活動時間 -->
-        <div class="border-bottom pb-2 mb-2">
-          <div class="fw-bold small mb-1" style="cursor:pointer;"
-            onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
-            ▶ 曜日別の活動時間
-          </div>
-          <div style="display:none;" id="detail-weekday"></div>
-        </div>
-
-        <!-- 開始時刻帯の分析 -->
-        <div class="border-bottom pb-2 mb-2">
-          <div class="fw-bold small mb-1" style="cursor:pointer;"
-            onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
-            ▶ 開始時刻帯の分析
-          </div>
-          <div style="display:none;" id="detail-start-time"></div>
-        </div>
-
-        <!-- 活動時間と状態の分析 -->
-        <div class="border-bottom pb-2 mb-2">
-          <div class="fw-bold small mb-1" style="cursor:pointer;"
-            onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
-            ▶ 活動時間と状態の分析
-          </div>
-          <div style="display:none;" id="detail-work"></div>
-        </div>
-
-        <!-- 天気・気圧と状態の分析 -->
-        <div class="pb-2 mb-2">
-          <div class="fw-bold small mb-1" style="cursor:pointer;"
-            onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
-            ▶ 天気・気圧と状態の分析
-          </div>
-          <div style="display:none;">
-            <div class="text-muted small mt-2 mb-1">天気</div>
-            <div id="detail-weather"></div>
-            <div class="text-muted small mt-3 mb-1">気圧</div>
-            <div id="detail-pressure"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -353,6 +282,14 @@
         return record.evening.workDuration;
       }
       return record.evening.workHours || 0;
+    }
+
+    // 起床時の眠気を数値に変換する（なし=0点、少し=1点、強い=2点）
+    function drowsinessToScore(value) {
+      if (value === 'なし') return 0;
+      if (value === '少し') return 1;
+      if (value === '強い') return 2;
+      return null;
     }
 
     // ============================
@@ -1191,18 +1128,60 @@
         return { enoughData: false };
       }
 
-      var groups = [
+      var groupDefs = [
         { label: '満足度低い（1〜2）', records: recordsWithSleepQuality.filter(function(r) { return r.morning.sleepQuality <= 2; }) },
         { label: '満足度普通（3）',    records: recordsWithSleepQuality.filter(function(r) { return r.morning.sleepQuality === 3; }) },
         { label: '満足度高い（4〜5）', records: recordsWithSleepQuality.filter(function(r) { return r.morning.sleepQuality >= 4; }) }
       ];
 
-      return { enoughData: true, groups: calculateGroupStats(groups) };
+      // 体調・メンタル・活力・調子は共通関数で計算する
+      var stats = calculateGroupStats(groupDefs);
+
+      // このエンジンだけ「起床時の眠気の平均」も追加で計算する
+      // ※起床時の眠気は今回追加した項目なので、記録が無い日はnullになり平均から除外される
+      stats.forEach(function(s, i) {
+        var drowsinessList = groupDefs[i].records
+          .map(function(r) { return drowsinessToScore(r.morning.morningDrowsiness); })
+          .filter(function(v) { return v !== null; });
+        s.avgDrowsiness = average(drowsinessList);
+      });
+
+      return { enoughData: true, groups: stats };
     }
 
     // ============================
     // 睡眠と状態の分析：HTMLを組み立てる部分
     // ============================
+    // 睡眠と状態の分析専用の表示関数（起床時の眠気の列を追加するため専用にしている）
+    function renderSleepTable(groups) {
+      var html = '<table class="table table-sm mt-2">';
+      html += '<thead><tr>';
+      html += '<th class="text-muted fw-normal small">条件</th>';
+      html += '<th class="text-muted fw-normal small">件数</th>';
+      html += '<th class="text-muted fw-normal small">起床時の眠気</th>';
+      html += '<th class="text-muted fw-normal small">体調</th>';
+      html += '<th class="text-muted fw-normal small">メンタル</th>';
+      html += '<th class="text-muted fw-normal small">活力</th>';
+      html += '<th class="text-muted fw-normal small">調子</th>';
+      html += '</tr></thead><tbody>';
+
+      groups.forEach(function(s) {
+        html += '<tr>';
+        html += '<td class="small">' + s.label + '</td>';
+        html += '<td class="small text-muted">' + s.count + '件</td>';
+        html += '<td class="small">' + (s.avgDrowsiness !== null ? s.avgDrowsiness.toFixed(1) : '-') + '</td>';
+        html += '<td class="small">' + (s.physical      !== null ? s.physical.toFixed(1)      : '-') + '</td>';
+        html += '<td class="small">' + (s.mental         !== null ? s.mental.toFixed(1)         : '-') + '</td>';
+        html += '<td class="small">' + (s.energy         !== null ? s.energy.toFixed(1)         : '-') + '</td>';
+        html += '<td class="small">' + (s.dayRating       !== null ? s.dayRating.toFixed(1)      : '-') + '</td>';
+        html += '</tr>';
+      });
+
+      html += '</tbody></table>';
+
+      return '<div class="table-responsive">' + html + '</div>';
+    }
+
     function showDetailSleep(validRecords) {
       var container = document.getElementById('detail-sleep');
       if (!container) return;
@@ -1213,7 +1192,7 @@
         return;
       }
 
-      container.innerHTML = renderGroupStatsTable(data.groups);
+      container.innerHTML = renderSleepTable(data.groups);
     }
 
     // ============================
@@ -1345,6 +1324,259 @@
       }
 
       container.innerHTML = renderGroupStatsTable(data.groups);
+    }
+
+    // ============================
+    // 最近の発見：🌱回復カテゴリのデータをまとめる
+    // ============================
+    // 主分析（回復要因分析）＋補助分析6つの結果を1つのオブジェクトにまとめて返す。
+    // AIにはこのオブジェクトをJSON化してそのまま渡す想定。
+    // recentRecordsには「直近30日」のvalidRecordsを渡すこと。
+    function gatherRecoveryInsightData(recentRecords) {
+      return {
+        main: calculateRecoveryFactors(recentRecords),
+        supporting: {
+          sleep:     calculateSleepStats(recentRecords),
+          outing:    calculateOutingStats(recentRecords),
+          social:    calculateSocialStats(recentRecords),
+          work:      calculateWorkStats(recentRecords),
+          startTime: calculateStartTimeStats(recentRecords),
+          weather:   calculateWeatherStats(recentRecords),
+          pressure:  calculatePressureStats(recentRecords)
+        }
+      };
+    }
+
+    // ============================
+    // 最近の発見：⚠️悪化カテゴリのデータをまとめる
+    // ============================
+    function gatherTriggerInsightData(recentRecords) {
+      return {
+        main: calculateTriggerFactors(recentRecords),
+        supporting: {
+          sleep:     calculateSleepStats(recentRecords),
+          outing:    calculateOutingStats(recentRecords),
+          social:    calculateSocialStats(recentRecords),
+          work:      calculateWorkStats(recentRecords),
+          startTime: calculateStartTimeStats(recentRecords),
+          weather:   calculateWeatherStats(recentRecords),
+          pressure:  calculatePressureStats(recentRecords)
+        }
+      };
+    }
+
+    // ============================
+    // 最近の発見：✨安定カテゴリのデータをまとめる
+    // ============================
+    function gatherStableInsightData(recentRecords) {
+      return {
+        main: calculateStableFactors(recentRecords),
+        supporting: {
+          sleep:     calculateSleepStats(recentRecords),
+          outing:    calculateOutingStats(recentRecords),
+          social:    calculateSocialStats(recentRecords),
+          work:      calculateWorkStats(recentRecords),
+          startTime: calculateStartTimeStats(recentRecords),
+          weather:   calculateWeatherStats(recentRecords),
+          pressure:  calculatePressureStats(recentRecords)
+        }
+      };
+    }
+
+    // ============================
+    // 最近の発見：AIへのプロンプトを組み立てる
+    // ============================
+    function buildRecentDiscoveryPrompt(recoveryData, triggerData, stableData) {
+
+      var prompt = '';
+
+      prompt += 'あなたは個人のセルフケアアプリの分析アシスタントです。\n';
+      prompt += '以下は「回復」「悪化」「安定」それぞれについて、事前に計算済みの分析結果（主分析＋補助分析）です。\n';
+      prompt += 'あなた自身で新しいデータ分析は行わず、この分析結果だけをもとに判断してください。\n\n';
+
+      prompt += '【回復（前日つらい日→翌日回復した日の特徴）】\n';
+      prompt += JSON.stringify(recoveryData) + '\n\n';
+
+      prompt += '【悪化（つらい日の特徴）】\n';
+      prompt += JSON.stringify(triggerData) + '\n\n';
+
+      prompt += '【安定（良い日の特徴）】\n';
+      prompt += JSON.stringify(stableData) + '\n\n';
+
+      prompt += '上記のデータをもとに、次のルールに従って「回復」「悪化」「安定」それぞれ1つずつ、最近の生活からの気づきを短い日本語の文章で要約してください。\n\n';
+
+      prompt += 'ルール：\n';
+      prompt += '・各分析結果について、件数が十分にあるか（enoughDataがtrueか、countが極端に少なくないか）を確認し、根拠が弱いものは採用しない\n';
+      prompt += '・主分析と補助分析の間で矛盾がないかを確認し、矛盾する場合はより根拠の強い方を採用する\n';
+      prompt += '・最近の生活改善に役立つ、具体的な気づきを優先する\n';
+      prompt += '・解釈は簡潔にし、1〜2文程度に収める\n';
+      prompt += '・「良い」「悪い」のような評価語は避け、事実に基づいた傾向として書く\n';
+      prompt += '・該当するデータが無い、または根拠が弱すぎる場合は、そのカテゴリの値を空文字列（""）にする\n\n';
+
+      prompt += '出力は次のJSON形式のみとし、それ以外の文章（前置き・説明・Markdownのコードブロック記号）は一切含めないでください。\n';
+      prompt += '{"recovery": "回復についての要約文", "worsening": "悪化についての要約文", "stable": "安定についての要約文"}';
+
+      return prompt;
+    }
+
+    // ============================
+    // 最近の発見：AIを呼び出してJSONを解析する
+    // ============================
+    function callRecentDiscoveryAPI(prompt) {
+      return fetch('https://self-insight-api.gudelove0919.workers.dev/api/summary', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: prompt })
+      })
+      .then(function(response) {
+        return response.json();
+      })
+      .then(function(data) {
+
+        // Anthropicの返答からテキストを取り出す（evening.htmlのAI総評と同じやり方）
+        var text = '';
+        if (data.content && data.content.length > 0) {
+          data.content.forEach(function(block) {
+            if (block.type === 'text') {
+              text += block.text;
+            }
+          });
+        }
+
+        // Markdownのコードブロック記号（```json や ```）が付いてくることがあるので取り除く
+        var cleaned = text.replace(/```json/g, '').replace(/```/g, '').trim();
+
+        // JSONとして解析する
+        var parsed = JSON.parse(cleaned);
+
+        return {
+          recovery: parsed.recovery || '',
+          worsening: parsed.worsening || '',
+          stable: parsed.stable || ''
+        };
+      });
+    }
+
+    // ============================
+    // 最近の発見：生成してlocalStorageに保存する
+    // ============================
+    function generateRecentDiscovery(records) {
+
+      var validAll = getValidRecords(records);
+      var recent30 = getRecentRecords(validAll, 30);
+
+      var prompt = buildRecentDiscoveryPrompt(
+        gatherRecoveryInsightData(recent30),
+        gatherTriggerInsightData(recent30),
+        gatherStableInsightData(recent30)
+      );
+
+      return callRecentDiscoveryAPI(prompt)
+        .then(function(result) {
+
+          var now = new Date();
+          var currentMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+
+          var toSave = {
+            generatedMonth: currentMonth,
+            generatedAt: now.toISOString(),
+            recovery: result.recovery,
+            worsening: result.worsening,
+            stable: result.stable
+          };
+
+          localStorage.setItem('selfInsightRecentDiscovery', JSON.stringify(toSave));
+
+          return toSave;
+        })
+        .catch(function(error) {
+          console.log('最近の発見の生成に失敗しました:', error);
+          return null;
+        });
+    }
+
+    // ============================
+    // 最近の発見：画面に表示する
+    // ============================
+    function renderRecentDiscovery(data) {
+      var container = document.getElementById('recent-discovery');
+
+      if (!data) {
+        container.innerHTML = '<p class="text-muted small">まだ生成されていません。「今すぐ更新」ボタンを押して生成してください。</p>';
+        return;
+      }
+
+      var html = '';
+
+      html += '<div class="mb-3">';
+      html += '<div class="fw-bold small mb-1">🌱 回復</div>';
+      html += '<div class="small">' + (data.recovery ? data.recovery : 'まだ十分な傾向が見つかっていません') + '</div>';
+      html += '</div>';
+
+      html += '<div class="mb-3">';
+      html += '<div class="fw-bold small mb-1">⚠️ 悪化</div>';
+      html += '<div class="small">' + (data.worsening ? data.worsening : 'まだ十分な傾向が見つかっていません') + '</div>';
+      html += '</div>';
+
+      html += '<div>';
+      html += '<div class="fw-bold small mb-1">✨ 安定</div>';
+      html += '<div class="small">' + (data.stable ? data.stable : 'まだ十分な傾向が見つかっていません') + '</div>';
+      html += '</div>';
+
+      html += '<div class="text-muted small mt-3">';
+      html += '最終更新：' + formatDateMD(data.generatedAt.split('T')[0]);
+      html += '</div>';
+
+      container.innerHTML = html;
+    }
+
+    // ============================
+    // 最近の発見：手動で再生成する（ボタン用）
+    // ============================
+    function handleRegenerateDiscovery() {
+      var btn = document.getElementById('regenerate-discovery-btn');
+      var container = document.getElementById('recent-discovery');
+
+      btn.disabled = true;
+      btn.textContent = '生成中...';
+      container.innerHTML = '<p class="text-muted small">AIが分析結果を確認しています...</p>';
+
+      generateRecentDiscovery(loadRecords()).then(function(result) {
+        btn.disabled = false;
+        btn.textContent = '今すぐ更新';
+
+        if (result) {
+          renderRecentDiscovery(result);
+        } else {
+          container.innerHTML = '<p class="text-muted small">生成に失敗しました。もう一度お試しください。</p>';
+        }
+      });
+    }
+
+    // ============================
+    // 最近の発見：ページ読み込み時に表示する
+    // ============================
+    function loadRecentDiscovery() {
+      var saved = localStorage.getItem('selfInsightRecentDiscovery');
+      var data = saved ? JSON.parse(saved) : null;
+
+      // まずは保存されているデータ（古くても）をすぐ表示する
+      renderRecentDiscovery(data);
+
+      // 今月分がまだ無ければ、裏側で自動生成する
+      var now = new Date();
+      var currentMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+      var needsRegenerate = !data || data.generatedMonth !== currentMonth;
+
+      if (needsRegenerate) {
+        console.log('今月分の「最近の発見」がまだ無いため、自動生成します。');
+        generateRecentDiscovery(loadRecords()).then(function(result) {
+          if (result) {
+            renderRecentDiscovery(result);
+          }
+          // 失敗した場合は何もしない（さっき表示した古いデータのままにしておく）
+        });
+      }
     }
 
     // ============================
@@ -1704,22 +1936,9 @@
 
     var records = loadRecords();
 
-    showRecentPatterns(records);
+    loadRecentDiscovery();
     showWeeklyTrend(records);
     showAllPatterns(records);
-
-    var validRecords = getValidRecords(records);
-    showDetailRecovery(validRecords);
-    showDetailTrigger(validRecords);
-    showDetailStable(validRecords);
-    showDetailWeekday(validRecords);
-    showDetailStartTime(validRecords);
-    showDetailSleep(validRecords);
-    showDetailOuting(validRecords);
-    showDetailSocial(validRecords);
-    showDetailWork(validRecords);
-    showDetailWeather(validRecords);
-    showDetailPressure(validRecords);
 
   </script>
 

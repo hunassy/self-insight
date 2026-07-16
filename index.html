@@ -513,6 +513,17 @@
       return 0;
     }
 
+    // 外出・交流データを安全に配列として取得する（古い文字列データは空配列扱いにする）
+    function getOutingList(r) {
+      var outing = r.evening.outing;
+      return Array.isArray(outing) ? outing : [];
+    }
+
+    function getSocialList(r) {
+      var socializing = r.evening.socializing;
+      return Array.isArray(socializing) ? socializing : [];
+    }
+
     // ============================
     // 今日のヒント：メッセージ設定
     // ここを書き換えるだけで文言が変わります
@@ -566,9 +577,9 @@
         return 0;
       }
 
-      // 外出した日の調子スコアを計算する（dayRating基準）
-      var outingDays   = valid.filter(function(r) { return r.evening.outing === 'した'; });
-      var noOutingDays = valid.filter(function(r) { return r.evening.outing === 'しなかった'; });
+      // 外出した日の調子スコアを計算する（dayRating基準。種類は問わず、何か1つでも選ばれていれば外出ありとする）
+      var outingDays   = valid.filter(function(r) { return getOutingList(r).length > 0; });
+      var noOutingDays = valid.filter(function(r) { return getOutingList(r).length === 0; });
 
       var outingAvg   = outingDays.length > 0
         ? outingDays.reduce(function(sum, r) { return sum + dayRatingToScore(r); }, 0) / outingDays.length
@@ -577,9 +588,9 @@
         ? noOutingDays.reduce(function(sum, r) { return sum + dayRatingToScore(r); }, 0) / noOutingDays.length
         : null;
 
-      // 交流した日の調子スコアを計算する（dayRating基準）
-      var socialDays   = valid.filter(function(r) { return r.evening.socializing === 'あった'; });
-      var noSocialDays = valid.filter(function(r) { return r.evening.socializing === 'なかった'; });
+      // 交流した日の調子スコアを計算する（dayRating基準。種類は問わず、何か1つでも選ばれていれば交流ありとする）
+      var socialDays   = valid.filter(function(r) { return getSocialList(r).length > 0; });
+      var noSocialDays = valid.filter(function(r) { return getSocialList(r).length === 0; });
 
       var socialAvg   = socialDays.length > 0
         ? socialDays.reduce(function(sum, r) { return sum + dayRatingToScore(r); }, 0) / socialDays.length
