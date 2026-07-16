@@ -57,6 +57,24 @@
       </div>
     </div>
 
+    <!-- 環境データの補完 -->
+    <div class="card mb-4">
+      <div class="card-body">
+        <h2 class="fs-6 fw-bold mb-2">環境データを補完する</h2>
+        <p class="text-muted small mb-2">
+          過去の記録に、湿度・最高最低気温・日照時間・降水量を後から追加します。<br>
+          天気データがすでにある記録のうち、これらの項目が無いものだけが対象です。
+        </p>
+        <p class="text-danger small mb-3">
+          ⚠️ 実行前に、必ず上の「JSONファイルをダウンロードする」でバックアップを取ってください。
+        </p>
+        <button class="btn btn-outline-primary" id="backfill-btn" onclick="startBackfillWeather()">
+          環境データを補完する
+        </button>
+        <div id="backfill-progress" class="small text-muted mt-2"></div>
+      </div>
+    </div>
+
     <!-- 記録一覧 -->
     <div id="records-container"></div>
 
@@ -187,6 +205,150 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
     }
 
+    // ============================
+    // 環境データの補完（バックフィル）
+    // ============================
+
+    // 位置情報を取得する（index.html・evening.htmlと同じ考え方）
+    function getCurrentLocation() {
+      return new Promise(function(resolve, reject) {
+        if (!navigator.geolocation) {
+          reject('位置情報非対応');
+          return;
+        }
+        navigator.geolocation.getCurrentPosition(
+          function(position) {
+            resolve({
+              lat: position.coords.latitude,
+              lon: position.coords.longitude
+            });
+          },
+          function(error) {
+            reject('位置情報取得失敗');
+          }
+        );
+      });
+    }
+
+    // 指定した日付・位置の環境データをOpen-Meteoの過去データAPIから取得する
+    function fetchPastWeather(dateString, lat, lon) {
+      var url = 'https://archive-api.open-meteo.com/v1/archive'
+        + '?latitude=' + lat
+        + '&longitude=' + lon
+        + '&start_date=' + dateString
+        + '&end_date=' + dateString
+        + '&daily=relative_humidity_2m_mean,temperature_2m_max,temperature_2m_min,sunshine_duration,precipitation_sum'
+        + '&timezone=Asia%2FTokyo';
+
+      return fetch(url)
+        .then(function(response) {
+          return response.json();
+        })
+        .then(function(data) {
+          return {
+            humidity: data.daily.relative_humidity_2m_mean[0],
+            tempMax: data.daily.temperature_2m_max[0],
+            tempMin: data.daily.temperature_2m_min[0],
+            sunshineHours: data.daily.sunshine_duration[0] !== null
+              ? Math.round(data.daily.sunshine_duration[0] / 3600 * 10) / 10
+              : null,
+            precipitation: data.daily.precipitation_sum[0]
+          };
+        });
+    }
+
+    // 補完が必要なレコードを見つける（天気データはあるが、湿度が無いものを対象にする）
+    function findRecordsNeedingBackfill(records) {
+      var targets = [];
+
+      records.forEach(function(record) {
+        ['morning', 'evening'].forEach(function(type) {
+          var section = record[type];
+          if (section && section.weather && section.humidity === undefined) {
+            targets.push({ date: record.date, type: type });
+          }
+        });
+      });
+
+      return targets;
+    }
+
+    // 1件ずつ順番に処理する（配列を先頭から1つずつ処理し、終わったら次へ進む）
+    function backfillOneByOne(targets, lat, lon, index, doneCount, failCount) {
+
+      var progressDiv = document.getElementById('backfill-progress');
+
+      if (index >= targets.length) {
+        progressDiv.textContent = '完了しました（成功：' + doneCount + '件、失敗：' + failCount + '件）';
+        var btn = document.getElementById('backfill-btn');
+        btn.disabled = false;
+        btn.textContent = '環境データを補完する';
+        return;
+      }
+
+      var target = targets[index];
+      progressDiv.textContent = (index + 1) + ' / ' + targets.length + '件 処理中...（' + target.date + '）';
+
+      fetchPastWeather(target.date, lat, lon)
+        .then(function(weather) {
+
+          // 既存のオブジェクトに新しいキーを追加するだけ（まるごと置き換えない）
+          var records = loadRecords();
+          var record = records.find(function(r) { return r.date === target.date; });
+
+          if (record && record[target.type]) {
+            record[target.type].humidity = weather.humidity;
+            record[target.type].tempMax = weather.tempMax;
+            record[target.type].tempMin = weather.tempMin;
+            record[target.type].sunshineHours = weather.sunshineHours;
+            record[target.type].precipitation = weather.precipitation;
+            saveAllRecords(records);
+          }
+
+          backfillOneByOne(targets, lat, lon, index + 1, doneCount + 1, failCount);
+        })
+        .catch(function(error) {
+          console.log(target.date + 'の取得に失敗しました:', error);
+          backfillOneByOne(targets, lat, lon, index + 1, doneCount, failCount + 1);
+        });
+    }
+
+    // ボタンから呼ばれるメイン処理
+    function startBackfillWeather() {
+
+      var records = loadRecords();
+      var targets = findRecordsNeedingBackfill(records);
+
+      if (targets.length === 0) {
+        showMessage('補完が必要な記録はありませんでした', 'success');
+        return;
+      }
+
+      var ok = confirm(
+        targets.length + '件の記録に環境データを追加します。\n' +
+        'バックアップは取りましたか？\n\n' +
+        '続けますか？'
+      );
+      if (!ok) return;
+
+      var btn = document.getElementById('backfill-btn');
+      btn.disabled = true;
+      btn.textContent = '処理中...';
+
+      var progressDiv = document.getElementById('backfill-progress');
+      progressDiv.textContent = '位置情報を取得しています...';
+
+      getCurrentLocation()
+        .then(function(location) {
+          backfillOneByOne(targets, location.lat, location.lon, 0, 0, 0);
+        })
+        .catch(function(error) {
+          progressDiv.textContent = '位置情報の取得に失敗しました。位置情報の利用を許可してから、もう一度お試しください。';
+          btn.disabled = false;
+          btn.textContent = '環境データを補完する';
+        });
+    }
+    
     // ============================
     // 記録の状態を文字で表示する
     // ============================

@@ -713,7 +713,8 @@
       var url = 'https://api.open-meteo.com/v1/forecast'
         + '?latitude=' + lat
         + '&longitude=' + lon
-        + '&current=temperature_2m,weathercode,surface_pressure'
+        + '&current=temperature_2m,weathercode,surface_pressure,relative_humidity_2m'
+        + '&daily=temperature_2m_max,temperature_2m_min,sunshine_duration,precipitation_sum'
         + '&timezone=Asia%2FTokyo';
 
       return fetch(url)
@@ -724,7 +725,14 @@
           return {
             temperature: data.current.temperature_2m,
             weatherCode: data.current.weathercode,
-            pressure: data.current.surface_pressure
+            pressure: data.current.surface_pressure,
+            humidity: data.current.relative_humidity_2m,
+            // dailyは配列で返ってくる。0番目が「今日」のデータ
+            tempMax: data.daily.temperature_2m_max[0],
+            tempMin: data.daily.temperature_2m_min[0],
+            // 日照時間は秒で返ってくるので時間に変換する
+            sunshineHours: Math.round(data.daily.sunshine_duration[0] / 3600 * 10) / 10,
+            precipitation: data.daily.precipitation_sum[0]
           };
         });
     }
@@ -773,7 +781,12 @@
         morningDrowsiness: getRadioValue('morning-drowsiness'),
         weather: null,
         temperature: null,
-        pressure: null
+        pressure: null,
+        humidity: null,
+        tempMax: null,
+        tempMin: null,
+        sunshineHours: null,
+        precipitation: null
       };
 
       // 2. 位置情報→天気を取得してから保存する
@@ -785,6 +798,11 @@
           record.weather = weatherCodeToText(weather.weatherCode);
           record.temperature = weather.temperature;
           record.pressure = weather.pressure;
+          record.humidity = weather.humidity;
+          record.tempMax = weather.tempMax;
+          record.tempMin = weather.tempMin;
+          record.sunshineHours = weather.sunshineHours;
+          record.precipitation = weather.precipitation;
         })
         .catch(function(error) {
           // 天気取得失敗でも記録は続行する
@@ -806,7 +824,12 @@
               morningDrowsiness: record.morningDrowsiness,
               weather: record.weather,
               temperature: record.temperature,
-              pressure: record.pressure
+              pressure: record.pressure,
+              humidity: record.humidity,
+              tempMax: record.tempMax,
+              tempMin: record.tempMin,
+              sunshineHours: record.sunshineHours,
+              precipitation: record.precipitation
             }
           );
 
