@@ -1150,6 +1150,80 @@
     }
 
     // ============================
+    // 睡眠と状態の分析：環境データ別のデータを計算する部分
+    // ============================
+    // 天気・湿度・気圧といった環境データでグループ分けし、
+    // その中で睡眠満足度・起床時の眠気の平均がどうなるかを見る。
+    // （calculateSleepStatsとは逆方向の切り口。画面表示はせず、最近の発見のAI入力用）
+    function calculateSleepEnvironmentStats(validRecords) {
+
+      // 朝の記録に天気・湿度・気圧がある記録だけ対象にする
+      var recordsWithEnv = validRecords.filter(function(r) {
+        return r.morning && r.morning.weather && r.morning.humidity !== undefined && r.morning.pressure;
+      });
+
+      if (recordsWithEnv.length < 5) {
+        return { enoughData: false };
+      }
+
+      // 睡眠満足度・起床時の眠気の平均を計算する共通処理
+      function averageSleepMetrics(records) {
+        var qualityList = records
+          .map(function(r) { return r.morning.sleepQuality; })
+          .filter(function(v) { return v !== undefined && v !== null; });
+        var drowsinessList = records
+          .map(function(r) { return drowsinessToScore(r.morning.morningDrowsiness); })
+          .filter(function(v) { return v !== null; });
+
+        return {
+          count: records.length,
+          avgSleepQuality: average(qualityList),
+          avgDrowsiness: average(drowsinessList)
+        };
+      }
+
+      // --- 天気別 ---
+      var sunny = recordsWithEnv.filter(function(r) { return r.morning.weather === '快晴' || r.morning.weather === '晴れ'; });
+      var cloudy = recordsWithEnv.filter(function(r) { return r.morning.weather === '曇り'; });
+      var rainy = recordsWithEnv.filter(function(r) {
+        return r.morning.weather === '雨' || r.morning.weather === '霧雨' || r.morning.weather === 'にわか雨' || r.morning.weather === '雷雨';
+      });
+
+      var byWeather = [
+        { label: '晴れ', stats: averageSleepMetrics(sunny) },
+        { label: '曇り', stats: averageSleepMetrics(cloudy) },
+        { label: '雨',   stats: averageSleepMetrics(rainy) }
+      ];
+
+      // --- 湿度別（70%を境に2グループ） ---
+      var humidityLow = recordsWithEnv.filter(function(r) { return r.morning.humidity < 70; });
+      var humidityHigh = recordsWithEnv.filter(function(r) { return r.morning.humidity >= 70; });
+
+      var byHumidity = [
+        { label: '湿度70%未満', stats: averageSleepMetrics(humidityLow) },
+        { label: '湿度70%以上', stats: averageSleepMetrics(humidityHigh) }
+      ];
+
+      // --- 気圧別 ---
+      var pressureLow = recordsWithEnv.filter(function(r) { return r.morning.pressure < 1000; });
+      var pressureNormal = recordsWithEnv.filter(function(r) { return r.morning.pressure >= 1000 && r.morning.pressure < 1013; });
+      var pressureHigh = recordsWithEnv.filter(function(r) { return r.morning.pressure >= 1013; });
+
+      var byPressure = [
+        { label: '気圧低い（1000未満）',   stats: averageSleepMetrics(pressureLow) },
+        { label: '気圧普通（1000〜1013）', stats: averageSleepMetrics(pressureNormal) },
+        { label: '気圧高い（1013以上）',   stats: averageSleepMetrics(pressureHigh) }
+      ];
+
+      return {
+        enoughData: true,
+        byWeather: byWeather,
+        byHumidity: byHumidity,
+        byPressure: byPressure
+      };
+    }
+
+    // ============================
     // 睡眠と状態の分析：HTMLを組み立てる部分
     // ============================
     // 睡眠と状態の分析専用の表示関数（起床時の眠気の列を追加するため専用にしている）
@@ -1229,6 +1303,57 @@
     }
 
     // ============================
+    // 外出と状態の分析：外出種類×天気のデータを計算する部分
+    // ============================
+    // 外出の種類ごとに、天気別でさらに分けて集計する。
+    // （例：趣味の外出でも晴れの日と雨の日で違いがあるか）
+    // 画面表示はせず、最近の発見のAI入力用。
+    function calculateOutingEnvironmentStats(validRecords) {
+
+      var outingTypes = ['通院', '外食', '買い物', '手続き', '趣味'];
+
+      var byType = [];
+
+      outingTypes.forEach(function(type) {
+
+        // この種類の外出があった日だけ絞り込む
+        var typeRecords = validRecords.filter(function(r) {
+          return getOutingList(r).indexOf(type) !== -1 && r.evening.weather;
+        });
+
+        // 件数が少なすぎる種類は、天気で分けても意味が薄いので省略する
+        if (typeRecords.length < 3) {
+          return;
+        }
+
+        // 天気別にグループ分けする（外出時の天気は「夜の記録」の天気を使う。外出は夜の記録の項目のため）
+        var sunny = typeRecords.filter(function(r) { return r.evening.weather === '快晴' || r.evening.weather === '晴れ'; });
+        var cloudy = typeRecords.filter(function(r) { return r.evening.weather === '曇り'; });
+        var rainy = typeRecords.filter(function(r) {
+          return r.evening.weather === '雨' || r.evening.weather === '霧雨' || r.evening.weather === 'にわか雨' || r.evening.weather === '雷雨';
+        });
+
+        var weatherGroups = [
+          { label: '晴れ', records: sunny },
+          { label: '曇り', records: cloudy },
+          { label: '雨',   records: rainy }
+        ];
+
+        byType.push({
+          type: type,
+          totalCount: typeRecords.length,
+          weatherGroups: calculateGroupStats(weatherGroups)
+        });
+      });
+
+      if (byType.length === 0) {
+        return { enoughData: false };
+      }
+
+      return { enoughData: true, byType: byType };
+    }
+
+    // ============================
     // 外出と状態の分析：HTMLを組み立てる部分
     // ============================
     function showDetailOuting(validRecords) {
@@ -1294,7 +1419,7 @@
     }
 
     // ============================
-    // 作業時間と状態の分析：データを計算する部分
+    // 活動時間と状態の分析：データを計算する部分
     // ============================
     function calculateWorkStats(validRecords) {
       if (validRecords.length < 5) {
@@ -1311,7 +1436,7 @@
     }
 
     // ============================
-    // 作業時間と状態の分析：HTMLを組み立てる部分
+    // 活動時間と状態の分析：HTMLを組み立てる部分
     // ============================
     function showDetailWork(validRecords) {
       var container = document.getElementById('detail-work');
@@ -1327,6 +1452,98 @@
     }
 
     // ============================
+    // 活動時間と状態の分析：気温別のデータを計算する部分
+    // ============================
+    // 気温でグループ分けし、その中で平均活動時間・平均開始時刻がどう変わるかを見る。
+    // 画面表示はせず、最近の発見のAI入力用。
+    function calculateWorkEnvironmentStats(validRecords) {
+
+      // 夜の記録に気温がある記録だけ対象にする
+      var recordsWithTemp = validRecords.filter(function(r) {
+        return r.evening.temperature !== undefined && r.evening.temperature !== null;
+      });
+
+      if (recordsWithTemp.length < 5) {
+        return { enoughData: false };
+      }
+
+      var tempGroupDefs = [
+        { label: '15℃未満',    records: recordsWithTemp.filter(function(r) { return r.evening.temperature < 15; }) },
+        { label: '15〜25℃',    records: recordsWithTemp.filter(function(r) { return r.evening.temperature >= 15 && r.evening.temperature < 25; }) },
+        { label: '25〜30℃',    records: recordsWithTemp.filter(function(r) { return r.evening.temperature >= 25 && r.evening.temperature < 30; }) },
+        { label: '30℃以上',    records: recordsWithTemp.filter(function(r) { return r.evening.temperature >= 30; }) }
+      ];
+
+      // 体調・メンタル・活力・調子は共通関数で計算する
+      var stats = calculateGroupStats(tempGroupDefs);
+
+      // このエンジンだけ「平均活動時間」「平均開始時刻」も追加で計算する
+      stats.forEach(function(s, i) {
+        var records = tempGroupDefs[i].records;
+
+        s.avgDuration = average(records.map(function(r) { return populateActivityDurationOptions(r); }));
+
+        var startMinutesList = records
+          .map(function(r) { return timeStringToMinutes(r.evening.workStartTime); })
+          .filter(function(m) { return m !== null; });
+        s.avgStartMinutes = average(startMinutesList);
+      });
+
+      return { enoughData: true, byTemperature: stats };
+    }
+
+    // ============================
+    // 月別と状態の分析：データを計算する部分
+    // ============================
+    // 月ごとにグループ分けし、体調・メンタル・活力・調子に加えて
+    // 平均気温・平均湿度・平均気圧・平均日照時間も集計する。
+    // 設計書上「長期の傾向」専用（最近の発見では使わない）。
+    function calculateMonthlyStats(validRecords) {
+
+      if (validRecords.length < 5) {
+        return { enoughData: false };
+      }
+
+      // 記録に含まれる年月（例："2026-06"）を、古い順に重複なく取り出す
+      var monthKeysSet = {};
+      validRecords.forEach(function(r) { monthKeysSet[r.date.substring(0, 7)] = true; });
+      var monthKeys = Object.keys(monthKeysSet).sort();
+
+      var groupDefs = monthKeys.map(function(key) {
+        return {
+          label: key,
+          records: validRecords.filter(function(r) { return r.date.substring(0, 7) === key; })
+        };
+      });
+
+      // 体調・メンタル・活力・調子は共通関数で計算する
+      var stats = calculateGroupStats(groupDefs);
+
+      // 環境データを取り出すヘルパー：夜の記録を優先し、無ければ朝の記録を使う
+      function envValue(r, field) {
+        if (r.evening && r.evening[field] !== undefined && r.evening[field] !== null) {
+          return r.evening[field];
+        }
+        if (r.morning && r.morning[field] !== undefined && r.morning[field] !== null) {
+          return r.morning[field];
+        }
+        return null;
+      }
+
+      // このエンジンだけ「環境データの平均」も追加で計算する
+      stats.forEach(function(s, i) {
+        var records = groupDefs[i].records;
+
+        s.avgTemp = average(records.map(function(r) { return envValue(r, 'temperature'); }).filter(function(v) { return v !== null; }));
+        s.avgHumidity = average(records.map(function(r) { return envValue(r, 'humidity'); }).filter(function(v) { return v !== null; }));
+        s.avgPressure = average(records.map(function(r) { return envValue(r, 'pressure'); }).filter(function(v) { return v !== null; }));
+        s.avgSunshine = average(records.map(function(r) { return envValue(r, 'sunshineHours'); }).filter(function(v) { return v !== null; }));
+      });
+
+      return { enoughData: true, months: stats };
+    }
+
+    // ============================
     // 最近の発見：🌱回復カテゴリのデータをまとめる
     // ============================
     // 主分析（回復要因分析）＋補助分析6つの結果を1つのオブジェクトにまとめて返す。
@@ -1336,13 +1553,16 @@
       return {
         main: calculateRecoveryFactors(recentRecords),
         supporting: {
-          sleep:     calculateSleepStats(recentRecords),
-          outing:    calculateOutingStats(recentRecords),
-          social:    calculateSocialStats(recentRecords),
-          work:      calculateWorkStats(recentRecords),
-          startTime: calculateStartTimeStats(recentRecords),
-          weather:   calculateWeatherStats(recentRecords),
-          pressure:  calculatePressureStats(recentRecords)
+          sleep:            calculateSleepStats(recentRecords),
+          sleepEnvironment: calculateSleepEnvironmentStats(recentRecords),
+          outing:           calculateOutingStats(recentRecords),
+          outingEnvironment: calculateOutingEnvironmentStats(recentRecords),
+          social:           calculateSocialStats(recentRecords),
+          work:             calculateWorkStats(recentRecords),
+          workEnvironment:  calculateWorkEnvironmentStats(recentRecords),
+          startTime:        calculateStartTimeStats(recentRecords),
+          weather:          calculateWeatherStats(recentRecords),
+          pressure:         calculatePressureStats(recentRecords)
         }
       };
     }
@@ -1354,13 +1574,16 @@
       return {
         main: calculateTriggerFactors(recentRecords),
         supporting: {
-          sleep:     calculateSleepStats(recentRecords),
-          outing:    calculateOutingStats(recentRecords),
-          social:    calculateSocialStats(recentRecords),
-          work:      calculateWorkStats(recentRecords),
-          startTime: calculateStartTimeStats(recentRecords),
-          weather:   calculateWeatherStats(recentRecords),
-          pressure:  calculatePressureStats(recentRecords)
+          sleep:            calculateSleepStats(recentRecords),
+          sleepEnvironment: calculateSleepEnvironmentStats(recentRecords),
+          outing:           calculateOutingStats(recentRecords),
+          outingEnvironment: calculateOutingEnvironmentStats(recentRecords),
+          social:           calculateSocialStats(recentRecords),
+          work:             calculateWorkStats(recentRecords),
+          workEnvironment:  calculateWorkEnvironmentStats(recentRecords),
+          startTime:        calculateStartTimeStats(recentRecords),
+          weather:          calculateWeatherStats(recentRecords),
+          pressure:         calculatePressureStats(recentRecords)
         }
       };
     }
@@ -1372,13 +1595,16 @@
       return {
         main: calculateStableFactors(recentRecords),
         supporting: {
-          sleep:     calculateSleepStats(recentRecords),
-          outing:    calculateOutingStats(recentRecords),
-          social:    calculateSocialStats(recentRecords),
-          work:      calculateWorkStats(recentRecords),
-          startTime: calculateStartTimeStats(recentRecords),
-          weather:   calculateWeatherStats(recentRecords),
-          pressure:  calculatePressureStats(recentRecords)
+          sleep:            calculateSleepStats(recentRecords),
+          sleepEnvironment: calculateSleepEnvironmentStats(recentRecords),
+          outing:           calculateOutingStats(recentRecords),
+          outingEnvironment: calculateOutingEnvironmentStats(recentRecords),
+          social:           calculateSocialStats(recentRecords),
+          work:             calculateWorkStats(recentRecords),
+          workEnvironment:  calculateWorkEnvironmentStats(recentRecords),
+          startTime:        calculateStartTimeStats(recentRecords),
+          weather:          calculateWeatherStats(recentRecords),
+          pressure:         calculatePressureStats(recentRecords)
         }
       };
     }
@@ -1768,6 +1994,19 @@
     }
 
     // ============================
+    // 7日間の傾向：スコア系の値を「上昇・下降・変化なし」の文字列にする
+    // ============================
+    function scoreDirectionText(thisAvg, lastAvg, hasLastWeek) {
+      if (!hasLastWeek || thisAvg === null || lastAvg === null) {
+        return '-';
+      }
+      var diff = thisAvg - lastAvg;
+      if (diff > 0.05)  return '上昇';
+      if (diff < -0.05) return '低下';
+      return '変化なし';
+    }
+
+    // ============================
     // 7日間の傾向：件数系（外出日数・交流日数）の差分テキスト
     // ============================
     function formatCountDiff(thisCount, lastCount, hasLastWeek, unit) {
@@ -1858,21 +2097,21 @@
       var thisPhysical = averageDefined(thisWeek.map(function(r) { return r.scores ? r.scores.physical : undefined; }));
       var lastPhysical = averageDefined(lastWeek.map(function(r) { return r.scores ? r.scores.physical : undefined; }));
       html += weeklyCard('bi-heart-pulse', '体調',
-        thisPhysical !== null ? thisPhysical.toFixed(1) : '-',
+        scoreDirectionText(thisPhysical, lastPhysical, hasLastWeek),
         formatScoreDiff(thisPhysical, lastPhysical, hasLastWeek),
         false, 'weekly-card-sub');
 
       var thisMental = averageDefined(thisWeek.map(function(r) { return r.scores ? r.scores.mental : undefined; }));
       var lastMental = averageDefined(lastWeek.map(function(r) { return r.scores ? r.scores.mental : undefined; }));
       html += weeklyCard('bi-cloud', 'メンタル',
-        thisMental !== null ? thisMental.toFixed(1) : '-',
+        scoreDirectionText(thisMental, lastMental, hasLastWeek),
         formatScoreDiff(thisMental, lastMental, hasLastWeek),
         false, 'weekly-card-sub');
 
       var thisEnergy = averageDefined(thisWeek.map(function(r) { return r.scores ? r.scores.eveningEnergy : undefined; }));
       var lastEnergy = averageDefined(lastWeek.map(function(r) { return r.scores ? r.scores.eveningEnergy : undefined; }));
       html += weeklyCard('bi-lightning-charge', '活力',
-        thisEnergy !== null ? thisEnergy.toFixed(1) : '-',
+        scoreDirectionText(thisEnergy, lastEnergy, hasLastWeek),
         formatScoreDiff(thisEnergy, lastEnergy, hasLastWeek),
         false, 'weekly-card-sub');
 
